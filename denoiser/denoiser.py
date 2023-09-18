@@ -94,8 +94,10 @@ def preprocess_data(X, y, shuffle):
 
 def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder', model_path='data\\denoiser.h5', epochs=10, batch_size=32):
     # Create dataloaders for the training, validation and testing sets
-    train_dataloader = Dataloader(X_train, y_train, batch_size, shuffle=True)
-    val_dataloader = Dataloader(X_val, y_val, batch_size, shuffle=True)
+    # train_dataloader = Dataloader(X_train, y_train, batch_size, shuffle=True)
+    # val_dataloader = Dataloader(X_val, y_val, batch_size, shuffle=True)
+    train_data, train_label = preprocess_data(X_train, y_train, shuffle=True)
+    val_data, val_label = preprocess_data(X_val, y_val, shuffle=True)
 
     # Create the model
     model = select_model(model_type)
@@ -111,7 +113,7 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
                                 save_weights_only=True)
 
     print("Training model...")
-    model.fit(train_dataloader, epochs=epochs, validation_data=val_dataloader, callbacks=[checkpoint])
+    model.fit(train_data, train_label, epochs=epochs, validation_data=(val_data, val_label), callbacks=[checkpoint], batch_size=batch_size)
     print("Training complete.")
 
     return model
