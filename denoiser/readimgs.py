@@ -25,12 +25,17 @@ def find_images_in_folder(folder):
 
 # Main function to process folders
 def read_renoir(root_folders):
+    print('Reading images...')
     targets, labels = [], []
     for root_folder in root_folders:
+        print('Reading folder: ', root_folder)
         for foldername in os.listdir(root_folder):
             folder_path = os.path.join(root_folder, foldername)
             reference_image, noisy_image = find_images_in_folder(folder_path)
             
             targets.append(noisy_image)
             labels.append(reference_image)
+            if len(targets) % 4 == 0:
+                break
+    print('Reading complete.')
     return targets, labels

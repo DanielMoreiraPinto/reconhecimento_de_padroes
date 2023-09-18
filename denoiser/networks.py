@@ -3,6 +3,8 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Input, MaxPooling2D
 from tensorflow.keras.layers import AveragePooling2D, Add, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Reshape, Multiply, Activation
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr
 
 
 def simple_autoencoder():
@@ -24,7 +26,9 @@ def simple_autoencoder():
 
     # Autoencoder
     autoencoder = Model(input, x)
-    autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(), metrics=[ssim, psnr])
+
+    return autoencoder
 
 def cbd_net():
     input = Input(shape=(256, 256, 3))
@@ -69,7 +73,9 @@ def cbd_net():
     out = Add()([out,input])
 
     CBDNet = Model(input,out)
-    CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(), metrics=[ssim, psnr])
+
+    return CBDNet
 
 class EAM(tf.keras.layers.Layer):
   def __init__(self,**kwargs):
@@ -138,4 +144,6 @@ def rid_net():
     out = Add()([conv2,input])
 
     RIDNet = Model(input,out)
-    RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(), metrics=[ssim, psnr])
+
+    return RIDNet
