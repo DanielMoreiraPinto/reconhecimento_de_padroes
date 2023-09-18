@@ -26,7 +26,6 @@ def simple_autoencoder():
     autoencoder = Model(input, x)
     autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
 
-
 def cbd_net():
     input = Input(shape=(256, 256, 3))
 
@@ -71,7 +70,6 @@ def cbd_net():
 
     CBDNet = Model(input,out)
     CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
-
 
 class EAM(tf.keras.layers.Layer):
   def __init__(self,**kwargs):
@@ -127,7 +125,6 @@ class EAM(tf.keras.layers.Layer):
     mul = Multiply()([conv6, add3])
     out = Add()([input,mul]) # This is not included in the reference code
     return out
-
 
 def rid_net():
     input = Input(shape=(256, 256, 3))

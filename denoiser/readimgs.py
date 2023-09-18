@@ -23,7 +23,6 @@ def find_images_in_folder(folder):
 
     return reference_image, noisy_image
 
-
 # Main function to process folders
 def read_renoir(root_folders):
     targets, labels = [], []
