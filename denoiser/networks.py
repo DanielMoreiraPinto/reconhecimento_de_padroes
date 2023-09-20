@@ -26,7 +26,9 @@ def simple_autoencoder():
 
     # Autoencoder
     autoencoder = Model(input, x)
-    autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03),
+                        loss=tf.keras.losses.MeanSquaredError(),
+                        metrics=[tf.keras.metrics.MeanSquaredError()])
     return autoencoder
 
 def cbd_net():
@@ -72,7 +74,8 @@ def cbd_net():
     out = Add()([out,input])
 
     CBDNet = Model(input,out)
-    CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
+                   metrics=[tf.keras.metrics.MeanSquaredError()])
     return CBDNet
 
 class EAM(tf.keras.layers.Layer):
@@ -142,5 +145,6 @@ def rid_net():
     out = Add()([conv2,input])
 
     RIDNet = Model(input,out)
-    RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError())
+    RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
+                   metrics=[tf.keras.metrics.MeanSquaredError()])
     return RIDNet

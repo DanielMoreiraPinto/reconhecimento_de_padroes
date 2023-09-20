@@ -10,6 +10,8 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from readimgs import read_renoir
 from networks import simple_autoencoder, cbd_net, rid_net
 
+np.random.seed(42)
+
 
 # Function to resize an image to a fixed size
 def resize_image(image, target_size=(1024, 1024)):
@@ -63,9 +65,6 @@ class Dataloader(tf.keras.utils.Sequence):
         # collect batch data
         batch_x = self.X[i * self.batch_size : (i+1) * self.batch_size]
         batch_y = self.y[i * self.batch_size : (i+1) * self.batch_size]
-        # normalize data
-        batch_x = batch_x / 255.0
-        batch_y = batch_y / 255.0
         
         return tuple((batch_x,batch_y))
     
@@ -76,10 +75,22 @@ class Dataloader(tf.keras.utils.Sequence):
         if self.shuffle:
             self.indexes = np.random.permutation(self.indexes)
 
+def preprocess_data(X, y, shuffle):
+    # Shuffle the data if specified
+    if shuffle:
+        indices = np.arange(len(X))
+        np.random.shuffle(indices)
+        X = X[indices]
+        y = y[indices]
+
+    return X, y
+
 def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder', model_path='data\\denoiser.h5', epochs=10, batch_size=32):
     # Create dataloaders for the training, validation and testing sets
-    train_dataloader = Dataloader(X_train, y_train, batch_size, shuffle=True)
-    val_dataloader = Dataloader(X_val, y_val, batch_size, shuffle=True)
+    # train_dataloader = Dataloader(X_train, y_train, batch_size, shuffle=True)
+    # val_dataloader = Dataloader(X_val, y_val, batch_size, shuffle=True)
+    train_data, train_label = preprocess_data(X_train, y_train, shuffle=True)
+    val_data, val_label = preprocess_data(X_val, y_val, shuffle=True)
 
     # Create the model
     model = select_model(model_type)
@@ -90,7 +101,8 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
     checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
     print("Training model...")
-    model.fit(train_dataloader, epochs=epochs, validation_data=val_dataloader, callbacks=[checkpoint])
+    # model.fit(train_dataloader, epochs=epochs, validation_data=val_dataloader, callbacks=[checkpoint])
+    model.fit(train_data, train_label, batch_size=batch_size, epochs=epochs, validation_data=(val_data, val_label), callbacks=[checkpoint])
     print("Training complete.")
 
     return model
@@ -106,7 +118,7 @@ def select_model(model_type):
         raise ValueError("Invalid model type. Valid model types are 'simple_autoencoder', 'cbd_net' and 'rid_net'.")
     return model
 
-def load_model(model_path, model_type='simple_autoencoder'):
+def load_model(model_path):
     print("Loading model...")
     model = tf.keras.models.load_model(model_path)
     print("Model loaded.")
@@ -122,9 +134,11 @@ def load_model_weights(model_path, model_type='simple_autoencoder'):
 def test_model(model, X_test, y_test):
         # Predict with the model all images in the testing set
     print("Testing model...")
-    y_pred = model.predict(X_test/255.0)
+    y_pred = model.predict(X_test)
     y_pred = y_pred * 255.0
     y_pred = y_pred.astype(np.uint8)
+    y_test = y_test * 255.0
+    y_test = y_test.astype(np.uint8)
 
     # Calculate the PSNR and SSIM for each image
     psnr_list = []
@@ -151,13 +165,15 @@ RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\M
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\S90_Aligned',
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
 MODEL_TYPE = 'simple_autoencoder'
-MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\{MODEL_TYPE}.h5'
-EPOCHS = 3
-BATCH_SIZE = 32
+# MODEL_TYPE = 'cbd_net'
+# MODEL_TYPE = 'rid_net'
+MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+EPOCHS = 50
+BATCH_SIZE = 4
 
 def experiments(ckpt_path = None):
     # Read the images from the dataset
-    X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=4)
+    X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=0)
 
     # Divide the dataset into training, validation and testing sets
     # 80% training, 10% validation, 10% testing
@@ -170,13 +186,24 @@ def experiments(ckpt_path = None):
     X_val_patches, y_val_patches = patchify(X_val, y_val)
     X_test_patches, y_test_patches = patchify(X_test, y_test)
     
+    # Normalizing data
+    X_train_patches = X_train_patches / 255.0
+    y_train_patches = y_train_patches / 255.0
+    X_val_patches = X_val_patches / 255.0
+    y_val_patches = y_val_patches / 255.0
+    X_test_patches = X_test_patches / 255.0
+    y_test_patches = y_test_patches / 255.0
+    
     # Train the model
     if ckpt_path is not None:
-        model = load_model(ckpt_path, model_type=MODEL_TYPE)
+        model = load_model(ckpt_path)
     else:
         model = train_model(X_train_patches, y_train_patches, X_val_patches, y_val_patches, model_type=MODEL_TYPE, model_path=MODEL_PATH, epochs=EPOCHS, batch_size=BATCH_SIZE)
 
-    # Test the model
+    # Test the last model
+    test_model(model, X_test_patches, y_test_patches)
+    # Test the best model
+    model = load_model(MODEL_PATH)
     test_model(model, X_test_patches, y_test_patches)
 
 
