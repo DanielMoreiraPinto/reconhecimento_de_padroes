@@ -23,8 +23,7 @@ def create_patches(image, patch_size=(256, 256)):
     for y in range(0, height, patch_size[0]):
         for x in range(0, width, patch_size[1]):
             patch = image[y:y+patch_size[0], x:x+patch_size[1]]
-            if patch.shape == patch_size:
-                patches.append(patch)
+            patches.append(patch)
 
     return patches
 
@@ -64,6 +63,9 @@ class Dataloader(tf.keras.utils.Sequence):
         # collect batch data
         batch_x = self.X[i * self.batch_size : (i+1) * self.batch_size]
         batch_y = self.y[i * self.batch_size : (i+1) * self.batch_size]
+        # normalize data
+        batch_x = batch_x / 255.0
+        batch_y = batch_y / 255.0
         
         return tuple((batch_x,batch_y))
     
@@ -87,7 +89,9 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
         os.makedirs(os.path.dirname(model_path))
     checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
+    print("Training model...")
     model.fit(train_dataloader, epochs=epochs, validation_data=val_dataloader, callbacks=[checkpoint])
+    print("Training complete.")
 
     return model
 
@@ -103,19 +107,44 @@ def select_model(model_type):
     return model
 
 def load_model(model_path, model_type='simple_autoencoder'):
+    print("Loading model...")
+    model = tf.keras.models.load_model(model_path)
+    print("Model loaded.")
+    return model
+
+def load_model_weights(model_path, model_type='simple_autoencoder'):
+    print("Loading model...")
     model = select_model(model_type)
     model.load_weights(model_path)
+    print("Model loaded.")
     return model
 
 def test_model(model, X_test, y_test):
-    # Create dataloader for the testing set
-    test_dataloader = Dataloader(X_test, y_test, batch_size=1, shuffle=False)
+        # Predict with the model all images in the testing set
+    print("Testing model...")
+    y_pred = model.predict(X_test/255.0)
+    y_pred = y_pred * 255.0
+    y_pred = y_pred.astype(np.uint8)
 
-    # Evaluate the model with the metrics
-    loss = model.evaluate(test_dataloader)
+    # Calculate the PSNR and SSIM for each image
+    psnr_list = []
+    ssim_list = []
+    for i in range(len(y_test)):
+        psnr_list.append(psnr(y_test[i], y_pred[i]))
+        ssim_list.append(ssim(y_test[i], y_pred[i], channel_axis=-1))
 
-    # Print the loss
-    print("Test loss: {}".format(loss))
+    # Calculate the average PSNR and SSIM
+    avg_psnr = np.mean(psnr_list)
+    avg_ssim = np.mean(ssim_list)
+
+    print("Testing complete.")
+    print(f"Average PSNR: {avg_psnr}")
+    print(f"Average SSIM: {avg_ssim}")
+
+    metrics_by_image = [psnr_list, ssim_list]
+    avg_metrics = [avg_psnr, avg_ssim]
+
+    return y_pred, metrics_by_image, avg_metrics
 
 
 RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\Mi3_Aligned',
@@ -123,7 +152,7 @@ RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\M
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
 MODEL_TYPE = 'simple_autoencoder'
 MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\{MODEL_TYPE}.h5'
-EPOCHS = 10
+EPOCHS = 3
 BATCH_SIZE = 32
 
 def experiments(ckpt_path = None):
@@ -152,4 +181,4 @@ def experiments(ckpt_path = None):
 
 
 if __name__ == "__main__":
-    experiments()
+    experiments(ckpt_path=None)
