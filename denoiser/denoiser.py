@@ -128,7 +128,7 @@ BATCH_SIZE = 32
 
 def experiments(ckpt_path = None):
     # Read the images from the dataset
-    X, y = read_renoir(RENOIR_DATASET_PATHS)
+    X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=4)
 
     # Divide the dataset into training, validation and testing sets
     # 80% training, 10% validation, 10% testing
