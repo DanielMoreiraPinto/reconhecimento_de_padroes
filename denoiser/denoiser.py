@@ -39,12 +39,12 @@ def patchify(target, label, patch_size=(256, 256)):
         lb = resize_image(label[i])
 
         # Create patches from the resized image
-        tg_patches = create_patches(tg)
-        lb_patches = create_patches(lb)
+        tg = create_patches(tg)
+        lb = create_patches(lb)
 
         # Append the patches to the list
-        X.extend(tg_patches)
-        y.extend(lb_patches)
+        X.extend(tg)
+        y.extend(lb)
 
     # Convert the lists to numpy arrays
     X = np.array(X)
@@ -53,27 +53,47 @@ def patchify(target, label, patch_size=(256, 256)):
     print("Image resizing and patch creation complete.")
     return X, y
 
-class Dataloader(tf.keras.utils.Sequence):    
-    def __init__(self, X,y,batch_size=1, shuffle=False):
-        self.X = X
-        self.y = y
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.indexes = np.arange(len(X))
+def join_patches(patches, image_size=(1024, 1024)):
+    # Create an empty image
+    image = np.zeros((image_size[0], image_size[1], 3), dtype=np.uint8)
 
-    def __getitem__(self, i):
-        # collect batch data
-        batch_x = self.X[i * self.batch_size : (i+1) * self.batch_size]
-        batch_y = self.y[i * self.batch_size : (i+1) * self.batch_size]
-        
-        return tuple((batch_x,batch_y))
+    # Get the patch size
+    patch_size = (256, 256)
+
+    # Get the number of patches per row and column
+    patches_per_row = image_size[0] // patch_size[0]
+    patches_per_col = image_size[1] // patch_size[1]
+
+    # Iterate through the patches
+    for i, patch in enumerate(patches):
+        # Calculate the row and column of the patch
+        row = i // patches_per_row
+        col = i % patches_per_row
+
+        # Calculate the start and end row of the patch
+        start_row = row * patch_size[0]
+        end_row = start_row + patch_size[0]
+
+        # Calculate the start and end column of the patch
+        start_col = col * patch_size[1]
+        end_col = start_col + patch_size[1]
+
+        # Insert the patch into the image
+        image[start_row:end_row, start_col:end_col] = patch
+
+    return image
+
+def unpatchify(patches, image_size=(1024, 1024)):
+    print("Unpatchifying images...")
+    images = []
+    patches_by_img = int((image_size[0] /256) ** 2)
+    for i in range(0, len(patches), patches_by_img):
+        image = join_patches(patches[i:i+patches_by_img])
+        images.append(image)
     
-    def __len__(self):
-        return len(self.indexes) // self.batch_size
-    
-    def on_epoch_end(self):
-        if self.shuffle:
-            self.indexes = np.random.permutation(self.indexes)
+    images = np.array(images)
+    print("Unpatchifying complete.")
+    return images
 
 def preprocess_data(X, y, shuffle):
     # Shuffle the data if specified
@@ -85,10 +105,8 @@ def preprocess_data(X, y, shuffle):
 
     return X, y
 
-def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder', model_path='data\\denoiser.h5', epochs=10, batch_size=32):
-    # Create dataloaders for the training, validation and testing sets
-    # train_dataloader = Dataloader(X_train, y_train, batch_size, shuffle=True)
-    # val_dataloader = Dataloader(X_val, y_val, batch_size, shuffle=True)
+def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder', 
+                model_path='data\\denoiser.h5', epochs=10, batch_size=32):
     train_data, train_label = preprocess_data(X_train, y_train, shuffle=True)
     val_data, val_label = preprocess_data(X_val, y_val, shuffle=True)
 
@@ -101,7 +119,6 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
     checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
     print("Training model...")
-    # model.fit(train_dataloader, epochs=epochs, validation_data=val_dataloader, callbacks=[checkpoint])
     model.fit(train_data, train_label, batch_size=batch_size, epochs=epochs, validation_data=(val_data, val_label), callbacks=[checkpoint])
     print("Training complete.")
 
@@ -158,20 +175,22 @@ def test_model(model, X_test, y_test):
     metrics_by_image = [psnr_list, ssim_list]
     avg_metrics = [avg_psnr, avg_ssim]
 
-    return y_pred, metrics_by_image, avg_metrics
+    return y_pred, y_test, metrics_by_image, avg_metrics
 
 
 RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\Mi3_Aligned',
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\S90_Aligned',
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
+TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
+TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
 MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
 MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
-EPOCHS = 50
-BATCH_SIZE = 4
+EPOCHS = 100
+BATCH_SIZE = 32
 
-def experiments(ckpt_path = None):
+def training(ckpt_path = None):
     # Read the images from the dataset
     X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=0)
 
@@ -182,30 +201,69 @@ def experiments(ckpt_path = None):
     X_test, y_test = X[int(len(X)*0.9):], y[int(len(y)*0.9):]
 
     # Create patches from the images
-    X_train_patches, y_train_patches = patchify(X_train, y_train)
-    X_val_patches, y_val_patches = patchify(X_val, y_val)
-    X_test_patches, y_test_patches = patchify(X_test, y_test)
+    X_train, y_train = patchify(X_train, y_train)
+    X_val, y_val = patchify(X_val, y_val)
+    X_test, y_test = patchify(X_test, y_test)
+
+    # Save the testing set
+    if not os.path.exists(TEST_SAVE_PATH):
+        os.makedirs(TEST_SAVE_PATH)
+        np.save(os.path.join(TEST_SAVE_PATH, 'x_test.npy'), X_test)
+        np.save(os.path.join(TEST_SAVE_PATH, 'y_test.npy'), y_test)
+        print("Testing set saved.")
+    else:
+        print("Testing set already exists.")
     
     # Normalizing data
-    X_train_patches = X_train_patches / 255.0
-    y_train_patches = y_train_patches / 255.0
-    X_val_patches = X_val_patches / 255.0
-    y_val_patches = y_val_patches / 255.0
-    X_test_patches = X_test_patches / 255.0
-    y_test_patches = y_test_patches / 255.0
+    X_train = X_train / 255.0
+    y_train = y_train / 255.0
+    X_val = X_val / 255.0
+    y_val = y_val / 255.0
+    X_test = X_test / 255.0
+    y_test = y_test / 255.0
     
     # Train the model
     if ckpt_path is not None:
+        # Load the model
         model = load_model(ckpt_path)
+        # Test the model
+        test_model(model, X_test, y_test)
     else:
-        model = train_model(X_train_patches, y_train_patches, X_val_patches, y_val_patches, model_type=MODEL_TYPE, model_path=MODEL_PATH, epochs=EPOCHS, batch_size=BATCH_SIZE)
+        model = train_model(X_train, y_train, X_val, y_val, model_type=MODEL_TYPE, model_path=MODEL_PATH, epochs=EPOCHS, batch_size=BATCH_SIZE)
+        # Test the last model
+        test_model(model, X_test, y_test)
+        # Test the best model
+        model = load_model(MODEL_PATH)
+        test_model(model, X_test, y_test)
 
-    # Test the last model
-    test_model(model, X_test_patches, y_test_patches)
-    # Test the best model
-    model = load_model(MODEL_PATH)
-    test_model(model, X_test_patches, y_test_patches)
+def test_denoising(test_path, model_path, save_path):
+    print("Loading testing set...")
+    X_test = np.load(os.path.join(test_path, 'x_test.npy'))
+    y_test = np.load(os.path.join(test_path, 'y_test.npy'))
+    print("Testing set loaded.")
+    X_test = X_test / 255.0
+    y_test = y_test / 255.0
+
+    print("Loading model...")
+    model = load_model(model_path)
+    print("Model loaded.")
+    y_pred, y_test, metrics_by_image, avg_metrics = test_model(model, X_test, y_test)
+    y_test = unpatchify(y_test)
+    y_pred = unpatchify(y_pred)
+    X_test = X_test * 255.0
+    X_test = X_test.astype(np.uint8)
+    X_test = unpatchify(X_test)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    for i in range(len(y_test)):
+        cv.imwrite(os.path.join(save_path, f'{i}_noise.png'), X_test[i])
+        cv.imwrite(os.path.join(save_path, f'{i}_true.png'), y_test[i])
+        cv.imwrite(os.path.join(save_path, f'{i}_pred.png'), y_pred[i])
+        if i == 19:
+            break
+    print("Testing complete.")
 
 
 if __name__ == "__main__":
-    experiments(ckpt_path=None)
+    training(ckpt_path=MODEL_PATH)
+    # test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
