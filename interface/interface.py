@@ -44,33 +44,60 @@ class ImageProcessingApp(QMainWindow):
 
         self.layout.addWidget(self.load_button)
 
-    def clear_layout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+    def clear_layout(self):
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget is not None:
+                self.layout.removeWidget(widget)
+                widget.deleteLater()
+
+    # def show_page(self):
+    #     self.clear_layout()
+
+    #     self.layout.addWidget(self.detect_button)
+    #     self.layout.addWidget(self.remove_button)
+    #     self.layout.addWidget(self.download_button)
+
+    #     # Moldura para imagem carregada
+    #     frame_original = QLabel(self)
+    #     frame_original.setFixedSize(300, 300)
+    #     frame_original.setFrameShape(QFrame.Box)  # Adicione moldura
+    #     self.layout.addWidget(frame_original)
+
+    #     # Moldura para imagem sem ruído
+    #     frame_processed = QLabel(self)
+    #     frame_processed.setFixedSize(300, 300)
+    #     frame_processed.setFrameShape(QFrame.Box)  # Adicione moldura
+    #     self.layout.addWidget(frame_processed)
+
+    #     # Exibe as imagens dentro das molduras
+    #     self.show_image(self.original_image, frame_original)
+    #     self.show_image(self.noise_image, frame_processed)
 
     def show_page(self):
-        self.clear_layout(self.layout)
-
+        # Create or update the main buttons
         self.layout.addWidget(self.detect_button)
         self.layout.addWidget(self.remove_button)
         self.layout.addWidget(self.download_button)
 
-        # Moldura para imagem carregada
-        frame_original = QLabel(self)
-        frame_original.setFixedSize(300, 300)
-        frame_original.setFrameShape(QFrame.Box)  # Adicione moldura
-        self.layout.addWidget(frame_original)
-
-        # Moldura para imagem sem ruído
-        frame_processed = QLabel(self)
-        frame_processed.setFixedSize(300, 300)
-        frame_processed.setFrameShape(QFrame.Box)  # Adicione moldura
-        self.layout.addWidget(frame_processed)
-
-        # Exibe as imagens dentro das molduras
+        # Create or update the frame for the original image
+        frame_original = self.layout.findChild(QLabel, "frame_original")
+        if frame_original is None:
+            frame_original = QLabel(self)
+            frame_original.setFixedSize(300, 300)
+            frame_original.setFrameShape(QFrame.Box)
+            frame_original.setObjectName("frame_original")
+            self.layout.addWidget(frame_original)
         self.show_image(self.original_image, frame_original)
+
+        # Create or update the frame for the processed image
+        frame_processed = self.layout.findChild(QLabel, "frame_processed")
+        if frame_processed is None:
+            frame_processed = QLabel(self)
+            frame_processed.setFixedSize(300, 300)
+            frame_processed.setFrameShape(QFrame.Box)
+            frame_processed.setObjectName("frame_processed")
+            self.layout.addWidget(frame_processed)
         self.show_image(self.noise_image, frame_processed)
 
     def loadImage(self):
@@ -108,6 +135,8 @@ class ImageProcessingApp(QMainWindow):
             file_path, _ = QFileDialog.getSaveFileName(self, "Salvar Imagem", "", "PNG Files (*.png)", options=options)
             
             if file_path:
+                if not file_path.endswith(".png"):
+                    file_path = file_path + ".png"
                 cv2.imwrite(file_path, self.noise_image)
 
 if __name__ == '__main__':
