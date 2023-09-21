@@ -3,6 +3,7 @@ from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Input, MaxPooling2D
 from tensorflow.keras.layers import AveragePooling2D, Add, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Reshape, Multiply, Activation
+from tensorflow.keras.layers import BatchNormalization, Subtract
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
@@ -26,6 +27,7 @@ def simple_autoencoder():
 
     # Autoencoder
     autoencoder = Model(input, x)
+    print(autoencoder.summary())
     autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03),
                         loss=tf.keras.losses.MeanSquaredError(),
                         metrics=[tf.keras.metrics.MeanSquaredError()])
@@ -74,6 +76,7 @@ def cbd_net():
     out = Add()([out,input])
 
     CBDNet = Model(input,out)
+    print(CBDNet.summary())
     CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
                    metrics=[tf.keras.metrics.MeanSquaredError()])
     return CBDNet
@@ -145,6 +148,24 @@ def rid_net():
     out = Add()([conv2,input])
 
     RIDNet = Model(input,out)
+    print(RIDNet.summary())
     RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
                    metrics=[tf.keras.metrics.MeanSquaredError()])
     return RIDNet
+
+def dn_cnn():
+    input = Input(shape=(40,40,3),name='input')
+    x = Conv2D(64,kernel_size= (3,3), padding='same',name='conv2d_l1')(input)
+    x = Activation('relu',name='act_l1')(x)
+    for i in range(17):
+        x = Conv2D(64, kernel_size=(3,3), padding='same',name='conv2d_'+str(i))(x)
+        x = BatchNormalization(axis=-1,name='BN_'+str(i))(x)
+        x = Activation('relu',name='act_'+str(i))(x)   
+    x = Conv2D(3, kernel_size=(3,3), padding='same',name='conv2d_l3')(x)
+    x = Subtract(name='subtract')([input, x])   
+    model = Model(input,x)
+    print(model.summary())
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
+                   metrics=[tf.keras.metrics.MeanSquaredError()])
+    
+    return model

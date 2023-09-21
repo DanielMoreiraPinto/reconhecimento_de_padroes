@@ -7,8 +7,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-from readimgs import read_renoir
-from networks import simple_autoencoder, cbd_net, rid_net
+from readimgs_renoir import read_renoir
+from networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
 
 np.random.seed(42)
 
@@ -131,6 +131,8 @@ def select_model(model_type):
         model = cbd_net()
     elif model_type == 'rid_net':
         model = rid_net()
+    elif model_type == 'dncnn':
+        model = dn_cnn()
     else:
         raise ValueError("Invalid model type. Valid model types are 'simple_autoencoder', 'cbd_net' and 'rid_net'.")
     return model
@@ -265,5 +267,6 @@ def test_denoising(test_path, model_path, save_path):
 
 
 if __name__ == "__main__":
-    training(ckpt_path=MODEL_PATH)
+    training()
+    # training(ckpt_path=MODEL_PATH)
     # test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
