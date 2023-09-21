@@ -1,7 +1,12 @@
 import sys
+sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
+
 import cv2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QFrame  # Importe QFrame
 from PyQt5.QtGui import QImage, QPixmap
+
+from denoiser.denoiser import denoise
+
 
 class ImageProcessingApp(QMainWindow):
     def __init__(self):
@@ -39,7 +44,15 @@ class ImageProcessingApp(QMainWindow):
 
         self.layout.addWidget(self.load_button)
 
+    def clear_layout(self, layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
     def show_page(self):
+        self.clear_layout(self.layout)
+
         self.layout.addWidget(self.detect_button)
         self.layout.addWidget(self.remove_button)
         self.layout.addWidget(self.download_button)
@@ -84,9 +97,9 @@ class ImageProcessingApp(QMainWindow):
         pass
 
     def removeNoise(self):
-        # Implemente a remoção de ruído aqui usando o modelo de remoção de ruído
-        # Atualize a variável self.noise_image com a imagem sem ruído
-        pass
+        self.noise_image = denoise(self.original_image)
+        self.show_page()
+        self.download_button.setEnabled(True)
 
     def saveImage(self):
         if self.noise_image is not None:

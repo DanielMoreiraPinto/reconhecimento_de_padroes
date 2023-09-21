@@ -1,3 +1,6 @@
+import sys
+sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
+
 import os
 
 import cv2 as cv
@@ -7,8 +10,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-from readimgs_renoir import read_renoir
-from networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
+from denoiser.readimgs_renoir import read_renoir
+from denoiser.networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
 
 np.random.seed(42)
 
@@ -199,7 +202,8 @@ MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
 # MODEL_TYPE = 'dn_cnn'
-MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+# MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
 EPOCHS = 50
 BATCH_SIZE = 4
 
@@ -280,4 +284,21 @@ def test_denoising(test_path, model_path, save_path):
 if __name__ == "__main__":
     # training()
     # training(ckpt_path=MODEL_PATH)
-    test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
+    # test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
+    pass
+
+
+def denoise(image):
+    # Load the model
+    model = load_model(MODEL_PATH)
+    # Preprocess the image
+    image = resize_image(image)
+    image = create_patches(image)
+    image = np.array(image)
+    image = image / 255.0
+    # Denoise the image
+    image = model.predict(image)
+    image = image * 255.0
+    image = image.astype(np.uint8)
+    image = unpatchify(image)
+    return image[0]
