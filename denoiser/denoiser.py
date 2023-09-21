@@ -131,7 +131,7 @@ def select_model(model_type):
         model = cbd_net()
     elif model_type == 'rid_net':
         model = rid_net()
-    elif model_type == 'dncnn':
+    elif model_type == 'dn_cnn':
         model = dn_cnn()
     else:
         raise ValueError("Invalid model type. Valid model types are 'simple_autoencoder', 'cbd_net' and 'rid_net'.")
@@ -160,22 +160,30 @@ def test_model(model, X_test, y_test):
     y_test = y_test.astype(np.uint8)
 
     # Calculate the PSNR and SSIM for each image
+    psnr_noisy_list = []
+    ssim_noisy_list = []
     psnr_list = []
     ssim_list = []
     for i in range(len(y_test)):
         psnr_list.append(psnr(y_test[i], y_pred[i]))
         ssim_list.append(ssim(y_test[i], y_pred[i], channel_axis=-1))
+        psnr_noisy_list.append(psnr(y_test[i], X_test[i]))
+        ssim_noisy_list.append(ssim(y_test[i], X_test[i], channel_axis=-1))
 
     # Calculate the average PSNR and SSIM
     avg_psnr = np.mean(psnr_list)
     avg_ssim = np.mean(ssim_list)
+    avg_psnr_noisy = np.mean(psnr_noisy_list)
+    avg_ssim_noisy = np.mean(ssim_noisy_list)
 
     print("Testing complete.")
     print(f"Average PSNR: {avg_psnr}")
     print(f"Average SSIM: {avg_ssim}")
+    print(f"Average PSNR (noisy): {avg_psnr_noisy}")
+    print(f"Average SSIM (noisy): {avg_ssim_noisy}")
 
-    metrics_by_image = [psnr_list, ssim_list]
-    avg_metrics = [avg_psnr, avg_ssim]
+    metrics_by_image = [psnr_list, ssim_list, psnr_noisy_list, ssim_noisy_list]
+    avg_metrics = [avg_psnr, avg_ssim, avg_psnr_noisy, avg_ssim_noisy]
 
     return y_pred, y_test, metrics_by_image, avg_metrics
 
@@ -185,12 +193,13 @@ RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\M
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
 TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
 TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
-MODEL_TYPE = 'simple_autoencoder'
+# MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
+MODEL_TYPE = 'dn_cnn'
 MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
-EPOCHS = 100
-BATCH_SIZE = 32
+EPOCHS = 50
+BATCH_SIZE = 16
 
 def training(ckpt_path = None):
     # Read the images from the dataset
