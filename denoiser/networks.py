@@ -154,7 +154,7 @@ def rid_net():
     return RIDNet
 
 def dn_cnn():
-    input = Input(shape=(40,40,3),name='input')
+    input = Input(shape=(256,256,3),name='input')
     x = Conv2D(64,kernel_size= (3,3), padding='same',name='conv2d_l1')(input)
     x = Activation('relu',name='act_l1')(x)
     for i in range(17):
