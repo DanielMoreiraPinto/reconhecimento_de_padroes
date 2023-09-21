@@ -154,6 +154,8 @@ def test_model(model, X_test, y_test):
         # Predict with the model all images in the testing set
     print("Testing model...")
     y_pred = model.predict(X_test)
+    X_test = X_test * 255.0
+    X_test = X_test.astype(np.uint8)
     y_pred = y_pred * 255.0
     y_pred = y_pred.astype(np.uint8)
     y_test = y_test * 255.0
@@ -193,13 +195,13 @@ RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\M
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
 TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
 TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
-# MODEL_TYPE = 'simple_autoencoder'
+MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
-MODEL_TYPE = 'dn_cnn'
+# MODEL_TYPE = 'dn_cnn'
 MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
 EPOCHS = 50
-BATCH_SIZE = 16
+BATCH_SIZE = 4
 
 def training(ckpt_path = None):
     # Read the images from the dataset
@@ -276,6 +278,6 @@ def test_denoising(test_path, model_path, save_path):
 
 
 if __name__ == "__main__":
-    training()
+    # training()
     # training(ckpt_path=MODEL_PATH)
-    # test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
+    test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
