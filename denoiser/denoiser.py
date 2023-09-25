@@ -1,5 +1,5 @@
-import sys
-sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
+# import sys
+# sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
 
 import os
 
@@ -10,8 +10,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-from denoiser.readimgs_renoir import read_renoir
-from denoiser.networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
+from readimgs_renoir import read_renoir
+from networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
 
 np.random.seed(42)
 
