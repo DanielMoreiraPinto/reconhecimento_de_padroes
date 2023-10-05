@@ -3,8 +3,10 @@ from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QPushButton, QFileDia
 from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
 import os
-from setup_path import folder_relative_path
+from setup_path import folder_relative_path, project_folder_path
 from view import View
+from load_model import load_model, resize_image, create_patches,\
+    read_image, join_patches
 
 
 class Ui_MainWindow(QMainWindow):
@@ -15,6 +17,9 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1100, 700)
         MainWindow.setFixedSize(1100, 700)
+
+        self.path_image = None
+        self.path_model = os.path.join(project_folder_path, 'models', 'simple_autoenconder.h5')
 
         self.centralwidget = QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -79,6 +84,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton.setIcon(icon_reduzir_ruido)
         self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
         self.pushButton.setToolTip("Reduzir Ruído")
+        self.pushButton.clicked.connect(self.on_apply_denoising(self.path_image ,self.path_model))
 
         icon_salvar_imagem = QIcon()
         icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -152,10 +158,11 @@ class Ui_MainWindow(QMainWindow):
     
     def load_image(self, scene):
         file_name, _ =  QFileDialog.getOpenFileName(self, 'Selecione uma imagem...', '.', 'Image files (*.jpg *.gif *.png *.jpeg)')
+        self.path_image = file_name
         if file_name:
+            print('fala ae', file_name)
             pixmap = QPixmap(file_name)
             if not pixmap.isNull(): 
-                print('o tipo dessa desgraça', type(scene))
                 scene.clear()
                 scene.addPixmap(pixmap)
     
@@ -174,6 +181,14 @@ class Ui_MainWindow(QMainWindow):
         self.view_img_original.verticalScrollBar().setValue(move_factor_y)
         self.view_img_resultante.horizontalScrollBar().setValue(move_factor_x)
         self.view_img_resultante.verticalScrollBar().setValue(move_factor_y)
+
+    def on_apply_denoising(self, image_path, model_path):
+        image = read_image(image_path)
+        resized_image = resize_image(image)
+        patches = create_patches(resized_image)
+        model = load_model(model_path)
+        result = model.predict(patches)
+        final_image = join_patches(result)
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
