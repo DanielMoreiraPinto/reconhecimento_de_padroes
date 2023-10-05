@@ -39,7 +39,8 @@ class View(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         zoom_in = 1.15
         zoom_out = 1.0 / zoom_in
-        if event.pixelDelta().y() > 0:
+        delta = event.angleDelta().y() / 120
+        if delta > 0:
             self.zoom_signal.emit(zoom_in)
         else:
             self.zoom_signal.emit(zoom_out)

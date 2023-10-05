@@ -7,3 +7,4 @@ absolute_root_path = path
 # descomenta aqui se quiser ver
 # print(folder_relative_path)
 # print(absolute_root_path)
+print('teste', os.path.abspath(__file__))
