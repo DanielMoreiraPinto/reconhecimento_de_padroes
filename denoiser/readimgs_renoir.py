@@ -8,7 +8,7 @@ def find_images_in_folder(folder):
 
     # Iterate through files in the folder
     for filename in os.listdir(folder):
-        if filename.lower().endswith(".bmp"):
+        if filename.lower().endswith(".jpg"):
             file_path = os.path.join(folder, filename)
 
             # Check if the image contains "Reference" or "Noisy"
@@ -31,11 +31,12 @@ def read_renoir(root_folders, num_images=0):
         print('Reading folder: ', root_folder)
         for foldername in os.listdir(root_folder):
             folder_path = os.path.join(root_folder, foldername)
-            reference_image, noisy_image = find_images_in_folder(folder_path)
-            
-            targets.append(noisy_image)
-            labels.append(reference_image)
-            if num_images > 0 and len(targets) % num_images == 0:
-                break
+            if os.path.isdir(folder_path):
+                reference_image, noisy_image = find_images_in_folder(folder_path)
+                
+                targets.append(noisy_image)
+                labels.append(reference_image)
+                if num_images > 0 and len(targets) % num_images == 0:
+                    break
     print('Reading complete.')
     return targets, labels
