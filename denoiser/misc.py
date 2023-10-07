@@ -10,7 +10,9 @@ import patchify
 import cv2 as cv
 import os
 
-img_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\RENOIR\\Mi3_Aligned\\Batch_001\\IMG_20160202_015216Reference.jpg'
+# img_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\RENOIR\\Mi3_Aligned\\Batch_001\\IMG_20160202_015216Reference.jpg'
+# img_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\SIDD_Medium_Srgb\\Data\\0088_004_IP_00100_00050_5500_N\\0088_NOISY_SRGB_010.jpg'
+img_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\RENOIR\\Mi3_Aligned\\Batch_039\\IMG_20160224_053659Reference.jpg'
 save_patches_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\test\\patches'
 save_reconstructed_path = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\test\\reconstructed.jpg'
 

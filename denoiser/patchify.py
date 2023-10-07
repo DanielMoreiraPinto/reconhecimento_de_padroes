@@ -27,7 +27,7 @@ def split_image(image, patch_size=256):
 
     # Iterate through the image and extract patches
     for y in range(0, out_height, patch_size):
-        for x in range(0, out_height, patch_size):
+        for x in range(0, out_width, patch_size):
             patch = image[y:y+patch_size, x:x+patch_size]
             patches.append(patch)
 
