@@ -25,7 +25,7 @@ def find_images_in_folder(folder):
 
 # Main function to process folders
 def read_renoir(root_folders, num_images=0):
-    print('Reading images...')
+    print('Reading RENOIR...')
     targets, labels = [], []
     for root_folder in root_folders:
         print('Reading folder: ', root_folder)
