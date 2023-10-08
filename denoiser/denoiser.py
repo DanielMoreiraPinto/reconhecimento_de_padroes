@@ -2,101 +2,35 @@
 # sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
 
 import os
+import pickle
 
 import cv2 as cv
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
 from readimgs_renoir import read_renoir
+from readimgs_sidd import read_sidd
 from networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
+from patchify import split_image, reconstruct_image
 
 np.random.seed(42)
 
 
-# Function to resize an image to a fixed size
-def resize_image(image, target_size=(1024, 1024)):
-    return cv.resize(image, target_size)
-
-# Function to create patches from an image with a specified patch size
-def create_patches(image, patch_size=(256, 256)):
-    height, width = image.shape[:2]
-    patches = []
-
-    for y in range(0, height, patch_size[0]):
-        for x in range(0, width, patch_size[1]):
-            patch = image[y:y+patch_size[0], x:x+patch_size[1]]
-            patches.append(patch)
-
-    return patches
-
-def patchify(target, label, patch_size=(256, 256)):
-    print("Creating patches...")
-    # Iterate through the images
-    X, y = [], []
-    for i in range(len(target)):
-        # Resize the image to 1024x1024
-        tg = resize_image(target[i])
-        lb = resize_image(label[i])
-
-        # Create patches from the resized image
-        tg = create_patches(tg)
-        lb = create_patches(lb)
-
-        # Append the patches to the list
-        X.extend(tg)
-        y.extend(lb)
-
-    # Convert the lists to numpy arrays
-    X = np.array(X)
-    y = np.array(y)
-
-    print("Image resizing and patch creation complete.")
-    return X, y
-
-def join_patches(patches, image_size=(1024, 1024)):
-    # Create an empty image
-    image = np.zeros((image_size[0], image_size[1], 3), dtype=np.uint8)
-
-    # Get the patch size
-    patch_size = (256, 256)
-
-    # Get the number of patches per row and column
-    patches_per_row = image_size[0] // patch_size[0]
-    patches_per_col = image_size[1] // patch_size[1]
-
-    # Iterate through the patches
-    for i, patch in enumerate(patches):
-        # Calculate the row and column of the patch
-        row = i // patches_per_row
-        col = i % patches_per_row
-
-        # Calculate the start and end row of the patch
-        start_row = row * patch_size[0]
-        end_row = start_row + patch_size[0]
-
-        # Calculate the start and end column of the patch
-        start_col = col * patch_size[1]
-        end_col = start_col + patch_size[1]
-
-        # Insert the patch into the image
-        image[start_row:end_row, start_col:end_col] = patch
-
-    return image
-
-def unpatchify(patches, image_size=(1024, 1024)):
-    print("Unpatchifying images...")
-    images = []
-    patches_by_img = int((image_size[0] /256) ** 2)
-    for i in range(0, len(patches), patches_by_img):
-        image = join_patches(patches[i:i+patches_by_img])
-        images.append(image)
-    
-    images = np.array(images)
-    print("Unpatchifying complete.")
-    return images
+def select_model(model_type):
+    if model_type == 'simple_autoencoder':
+        model = simple_autoencoder()
+    elif model_type == 'cbd_net':
+        model = cbd_net()
+    elif model_type == 'rid_net':
+        model = rid_net()
+    elif model_type == 'dn_cnn':
+        model = dn_cnn()
+    else:
+        raise ValueError("Invalid model type. Valid model types are 'simple_autoencoder', 'cbd_net' and 'rid_net'.")
+    return model
 
 def preprocess_data(X, y, shuffle):
     # Shuffle the data if specified
@@ -105,6 +39,10 @@ def preprocess_data(X, y, shuffle):
         np.random.shuffle(indices)
         X = X[indices]
         y = y[indices]
+
+    # Normalize the data
+    X = X / 255.0
+    y = y / 255.0
 
     return X, y
 
@@ -121,29 +59,14 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
         os.makedirs(os.path.dirname(model_path))
     checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
+    # Create validation loss early stop
+    early_stop = EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='min')
+
     print("Training model...")
-    model.fit(train_data, train_label, batch_size=batch_size, epochs=epochs, validation_data=(val_data, val_label), callbacks=[checkpoint])
+    model.fit(train_data, train_label, batch_size=batch_size, epochs=epochs, 
+              validation_data=(val_data, val_label), 
+              callbacks=[checkpoint, early_stop])
     print("Training complete.")
-
-    return model
-
-def select_model(model_type):
-    if model_type == 'simple_autoencoder':
-        model = simple_autoencoder()
-    elif model_type == 'cbd_net':
-        model = cbd_net()
-    elif model_type == 'rid_net':
-        model = rid_net()
-    elif model_type == 'dn_cnn':
-        model = dn_cnn()
-    else:
-        raise ValueError("Invalid model type. Valid model types are 'simple_autoencoder', 'cbd_net' and 'rid_net'.")
-    return model
-
-def load_model(model_path):
-    print("Loading model...")
-    model = tf.keras.models.load_model(model_path)
-    print("Model loaded.")
     return model
 
 def load_model_weights(model_path, model_type='simple_autoencoder'):
@@ -156,13 +79,8 @@ def load_model_weights(model_path, model_type='simple_autoencoder'):
 def test_model(model, X_test, y_test):
         # Predict with the model all images in the testing set
     print("Testing model...")
-    y_pred = model.predict(X_test)
-    X_test = X_test * 255.0
-    X_test = X_test.astype(np.uint8)
-    y_pred = y_pred * 255.0
-    y_pred = y_pred.astype(np.uint8)
-    y_test = y_test * 255.0
-    y_test = y_test.astype(np.uint8)
+    X_test, y_test = preprocess_data(X_test, y_test, shuffle=False)
+    X_test, y_test, y_pred = pred_images(model, X_test, y_test)
 
     # Calculate the PSNR and SSIM for each image
     psnr_noisy_list = []
@@ -190,22 +108,24 @@ def test_model(model, X_test, y_test):
     metrics_by_image = [psnr_list, ssim_list, psnr_noisy_list, ssim_noisy_list]
     avg_metrics = [avg_psnr, avg_ssim, avg_psnr_noisy, avg_ssim_noisy]
 
-    return y_pred, y_test, metrics_by_image, avg_metrics
+    return metrics_by_image, avg_metrics, y_pred, y_test
 
+def pred_images(model, X_test, y_test):
+    y_pred = model.predict(X_test)
+    X_test = X_test * 255.0
+    X_test = X_test.astype(np.uint8)
+    y_pred = y_pred * 255.0
+    y_pred = y_pred.astype(np.uint8)
+    y_test = y_test * 255.0
+    y_test = y_test.astype(np.uint8)
+    return X_test,y_test,y_pred
 
-RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\Mi3_Aligned',
-                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\S90_Aligned',
-                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
-TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
-TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
-MODEL_TYPE = 'simple_autoencoder'
-# MODEL_TYPE = 'cbd_net'
-# MODEL_TYPE = 'rid_net'
-# MODEL_TYPE = 'dn_cnn'
-# MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
-MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
-EPOCHS = 50
-BATCH_SIZE = 4
+def patchify(X, y):
+    X_patches, y_patches = [], []
+    for i in range(len(X)):
+        X_patches.extend(split_image(X[i], 256))
+        y_patches.extend(split_image(y[i], 256))
+    return np.array(X_patches), np.array(y_patches)
 
 def training(ckpt_path = None):
     # Read the images from the dataset
@@ -216,89 +136,93 @@ def training(ckpt_path = None):
     X_train, y_train = X[:int(len(X)*0.8)], y[:int(len(y)*0.8)]
     X_val, y_val = X[int(len(X)*0.8):int(len(X)*0.9)], y[int(len(y)*0.8):int(len(y)*0.9)]
     X_test, y_test = X[int(len(X)*0.9):], y[int(len(y)*0.9):]
+    X = None
+    y = None
+    
+    # Save the testing images with pickle
+    if not os.path.exists(TEST_SAVE_PATH):
+        os.makedirs(TEST_SAVE_PATH)
+        with open(os.path.join(TEST_SAVE_PATH, 'x_test.pkl'), 'wb') as f:
+            pickle.dump(X_test, f)
+        with open(os.path.join(TEST_SAVE_PATH, 'y_test.pkl'), 'wb') as f:
+            pickle.dump(y_test, f)
+        print("Testing set saved.")
+    else:
+        print("Testing set already exists.")
 
     # Create patches from the images
     X_train, y_train = patchify(X_train, y_train)
     X_val, y_val = patchify(X_val, y_val)
     X_test, y_test = patchify(X_test, y_test)
-
-    # Save the testing set
-    if not os.path.exists(TEST_SAVE_PATH):
-        os.makedirs(TEST_SAVE_PATH)
-        np.save(os.path.join(TEST_SAVE_PATH, 'x_test.npy'), X_test)
-        np.save(os.path.join(TEST_SAVE_PATH, 'y_test.npy'), y_test)
-        print("Testing set saved.")
-    else:
-        print("Testing set already exists.")
-    
-    # Normalizing data
-    X_train = X_train / 255.0
-    y_train = y_train / 255.0
-    X_val = X_val / 255.0
-    y_val = y_val / 255.0
-    X_test = X_test / 255.0
-    y_test = y_test / 255.0
     
     # Train the model
     if ckpt_path is not None:
         # Load the model
-        model = load_model(ckpt_path)
+        model = load_model_weights(ckpt_path, model_type=MODEL_TYPE)
         # Test the model
         test_model(model, X_test, y_test)
     else:
         model = train_model(X_train, y_train, X_val, y_val, model_type=MODEL_TYPE, model_path=MODEL_PATH, epochs=EPOCHS, batch_size=BATCH_SIZE)
-        # Test the last model
-        test_model(model, X_test, y_test)
+        # # Test the last model
+        # test_model(model, X_test, y_test)
         # Test the best model
-        model = load_model(MODEL_PATH)
+        model = load_model_weights(MODEL_PATH, model_type=MODEL_TYPE)
         test_model(model, X_test, y_test)
 
-def test_denoising(test_path, model_path, save_path):
-    print("Loading testing set...")
-    X_test = np.load(os.path.join(test_path, 'x_test.npy'))
-    y_test = np.load(os.path.join(test_path, 'y_test.npy'))
-    print("Testing set loaded.")
-    X_test = X_test / 255.0
-    y_test = y_test / 255.0
+def denoise(image):
+    # Load the model
+    model = load_model_weights(MODEL_PATH, model_type=MODEL_TYPE)
+    # Preprocess the image
+    img_shape = image.shape
+    denoised = split_image(image, 256)
+    denoised = denoised / 255.0
+    # Denoise the image
+    denoised = model.predict(denoised)
+    denoised = image * 255.0
+    denoised = denoised.astype(np.uint8)
+    denoised = reconstruct_image(denoised, img_shape)
+    return denoised
 
-    print("Loading model...")
-    model = load_model(model_path)
-    print("Model loaded.")
-    y_pred, y_test, metrics_by_image, avg_metrics = test_model(model, X_test, y_test)
-    y_test = unpatchify(y_test)
-    y_pred = unpatchify(y_pred)
-    X_test = X_test * 255.0
-    X_test = X_test.astype(np.uint8)
-    X_test = unpatchify(X_test)
+def test_denoising(test_path, save_path):
+    print("Loading testing set...")
+    with open(os.path.join(test_path, 'x_test.pkl'), 'rb') as f:
+        X_test = pickle.load(f)
+    with open(os.path.join(test_path, 'y_test.pkl'), 'rb') as f:
+        y_test = pickle.load(f)
+    print("Testing set loaded.")
+    
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    for i in range(len(y_test)):
+    y_pred = []
+    for i in range(len(X_test)):
+        pred = denoise(X_test[i])
         cv.imwrite(os.path.join(save_path, f'{i}_noise.png'), X_test[i])
         cv.imwrite(os.path.join(save_path, f'{i}_true.png'), y_test[i])
-        cv.imwrite(os.path.join(save_path, f'{i}_pred.png'), y_pred[i])
+        cv.imwrite(os.path.join(save_path, f'{i}_pred.png'), pred)
         if i == 19:
             break
     print("Testing complete.")
 
 
+RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\Mi3_Aligned',
+                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\S90_Aligned',
+                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
+SIDD_DATASET_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\SIDD_Medium_Srgb\\Data'
+TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
+TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
+
+MODEL_TYPE = 'simple_autoencoder'
+# MODEL_TYPE = 'cbd_net'
+# MODEL_TYPE = 'rid_net'
+# MODEL_TYPE = 'dn_cnn'
+# MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
+
+EPOCHS = 100
+BATCH_SIZE = 4
+
 if __name__ == "__main__":
-    # training()
+    training()
     # training(ckpt_path=MODEL_PATH)
-    # test_denoising(TEST_SAVE_PATH, MODEL_PATH, TEST_SAMPLES_PATH)
+    # test_denoising(TEST_SAVE_PATH, TEST_SAMPLES_PATH)
     pass
-
-
-def denoise(image):
-    # Load the model
-    model = load_model(MODEL_PATH)
-    # Preprocess the image
-    image = resize_image(image)
-    image = create_patches(image)
-    image = np.array(image)
-    image = image / 255.0
-    # Denoise the image
-    image = model.predict(image)
-    image = image * 255.0
-    image = image.astype(np.uint8)
-    image = unpatchify(image)
-    return image[0]
