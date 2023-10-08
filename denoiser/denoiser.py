@@ -7,7 +7,7 @@ import pickle
 import cv2 as cv
 import numpy as np
 import tensorflow as tf
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
@@ -41,10 +41,24 @@ def preprocess_data(X, y, shuffle):
         y = y[indices]
 
     # Normalize the data
-    X = X / 255.0
-    y = y / 255.0
+    X = (X / 255.0).astype(np.float32)
+    y = (y / 255.0).astype(np.float32)
 
     return X, y
+
+class DataGenerator(tf.keras.utils.Sequence):
+    def __init__(self, X, y, batch_size=32):
+        self.X = X
+        self.y = y
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.X) / self.batch_size))
+
+    def __getitem__(self, index):
+        X_batch = self.X[index*self.batch_size:(index+1)*self.batch_size]
+        y_batch = self.y[index*self.batch_size:(index+1)*self.batch_size]
+        return X_batch, y_batch
 
 def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder', 
                 model_path='data\\denoiser.h5', epochs=10, batch_size=32):
@@ -58,13 +72,15 @@ def train_model(X_train, y_train, X_val, y_val, model_type='simple_autoencoder',
     if not os.path.exists(os.path.dirname(model_path)):
         os.makedirs(os.path.dirname(model_path))
     checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
     # Create validation loss early stop
     early_stop = EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='min')
 
+    train_gen = DataGenerator(train_data, train_label, batch_size=batch_size)
+    val_gen = DataGenerator(val_data, val_label, batch_size=batch_size)
+
     print("Training model...")
-    model.fit(train_data, train_label, batch_size=batch_size, epochs=epochs, 
-              validation_data=(val_data, val_label), 
+    model.fit(train_gen, batch_size=batch_size, epochs=epochs, 
+              validation_data=val_gen, 
               callbacks=[checkpoint, early_stop])
     print("Training complete.")
     return model
@@ -111,7 +127,7 @@ def test_model(model, X_test, y_test):
     return metrics_by_image, avg_metrics, y_pred, y_test
 
 def pred_images(model, X_test, y_test):
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test, batch_size=BATCH_SIZE)
     X_test = X_test * 255.0
     X_test = X_test.astype(np.uint8)
     y_pred = y_pred * 255.0
@@ -129,7 +145,7 @@ def patchify(X, y):
 
 def training(ckpt_path = None):
     # Read the images from the dataset
-    X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=0)
+    X, y = read_renoir(RENOIR_DATASET_PATHS, num_images=10)
 
     # Divide the dataset into training, validation and testing sets
     # 80% training, 10% validation, 10% testing
@@ -162,7 +178,9 @@ def training(ckpt_path = None):
         # Test the model
         test_model(model, X_test, y_test)
     else:
-        model = train_model(X_train, y_train, X_val, y_val, model_type=MODEL_TYPE, model_path=MODEL_PATH, epochs=EPOCHS, batch_size=BATCH_SIZE)
+        model = train_model(X_train, y_train, X_val, y_val, model_type=MODEL_TYPE, 
+                            model_path=MODEL_PATH, epochs=EPOCHS, 
+                            batch_size=BATCH_SIZE)
         # # Test the last model
         # test_model(model, X_test, y_test)
         # Test the best model
@@ -178,7 +196,7 @@ def denoise(image):
     denoised = denoised / 255.0
     # Denoise the image
     denoised = model.predict(denoised)
-    denoised = image * 255.0
+    denoised = denoised * 255.0
     denoised = denoised.astype(np.uint8)
     denoised = reconstruct_image(denoised, img_shape)
     return denoised
@@ -204,9 +222,9 @@ def test_denoising(test_path, save_path):
     print("Testing complete.")
 
 
-RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\Mi3_Aligned',
-                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\S90_Aligned',
-                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\T3i_Aligned']
+RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\RENOIR\\Mi3_Aligned',
+                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\RENOIR\\S90_Aligned',
+                        'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\RENOIR\\T3i_Aligned']
 SIDD_DATASET_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\SIDD_Medium_Srgb\\Data'
 TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
 TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
@@ -215,14 +233,14 @@ MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
 # MODEL_TYPE = 'dn_cnn'
-# MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
-MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
+MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+# MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
 
 EPOCHS = 100
-BATCH_SIZE = 4
+BATCH_SIZE = 32
 
 if __name__ == "__main__":
-    training()
+    # training()
     # training(ckpt_path=MODEL_PATH)
-    # test_denoising(TEST_SAVE_PATH, TEST_SAMPLES_PATH)
+    test_denoising(TEST_SAVE_PATH, TEST_SAMPLES_PATH)
     pass
