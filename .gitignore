@@ -3,6 +3,8 @@
 
 # Denoiser
 denoiser/data/
+datasets/Mi3_Aligned
+datasets/NIND
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
