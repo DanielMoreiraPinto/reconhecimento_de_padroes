@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QPushButton, QFileDialog, \
-    QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy
+    QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy, QMessageBox
 from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
 import os
+import cv2
+import numpy as np
 from setup_path import folder_relative_path, project_folder_path
 from view import View
-from load_model import load_model, resize_image, create_patches,\
-    read_image, join_patches
+from load_model import read_image, denoise
 
 
 class Ui_MainWindow(QMainWindow):
@@ -19,7 +20,10 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setFixedSize(1100, 700)
 
         self.path_image = None
-        self.path_model = os.path.join(project_folder_path, 'models', 'simple_autoenconder.h5')
+        self.pos_processed_image_path = None
+        self.pixmap_img_original = None
+        self.pixmap_img_resultante = None
+        self.path_model = 'C:\\Users\\joao_\\Documents\\Trabalho-ReconhecimentoPadroes\\models\\simple_autoencoder.h5'
 
         self.centralwidget = QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -84,7 +88,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton.setIcon(icon_reduzir_ruido)
         self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
         self.pushButton.setToolTip("Reduzir Ruído")
-        self.pushButton.clicked.connect(self.on_apply_denoising(self.path_image ,self.path_model))
+        self.pushButton.clicked.connect(self.on_botao_resultante_clicked)
 
         icon_salvar_imagem = QIcon()
         icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -95,7 +99,8 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_2.setIcon(icon_salvar_imagem)
         self.pushButton_2.setIconSize(QSize(self.pushButton_2.sizeHint().width(), self.pushButton_2.sizeHint().height()))
         self.pushButton_2.setToolTip("Salvar Imagem")
-        self.pushButton_2.clicked.connect(self.on_botao_resultante_clicked)
+        # self.pushButton_2.clicked.connect(self.on_botao_resultante_clicked)
+        self.pushButton_2.clicked.connect(self.save_image)
 
         icon_carregar_imagem = QIcon()
         icon_carregar_imagem.addPixmap(QPixmap("icons:load_image.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -156,21 +161,30 @@ class Ui_MainWindow(QMainWindow):
         self.retranslateUi(MainWindow)
         QMetaObject.connectSlotsByName(MainWindow)
     
-    def load_image(self, scene):
+    def load_image(self, scene, label):
         file_name, _ =  QFileDialog.getOpenFileName(self, 'Selecione uma imagem...', '.', 'Image files (*.jpg *.gif *.png *.jpeg)')
         self.path_image = file_name
         if file_name:
             print('fala ae', file_name)
-            pixmap = QPixmap(file_name)
-            if not pixmap.isNull(): 
+            self.pixmap_img_original = QPixmap(file_name)
+            if not self.pixmap_img_original.isNull(): 
                 scene.clear()
-                scene.addPixmap(pixmap)
+                scene.addPixmap(self.pixmap_img_original)
+        self.calculate_psnr(self.path_image, label)
+    
+    def show_image(self, image_path):
+        self.pixmap_img_resultante = QPixmap(image_path)
+        if not self.pixmap_img_resultante.isNull():
+            self.scene_img_resultante.clear()
+            self.scene_img_resultante.addPixmap(self.pixmap_img_resultante)
+        self.calculate_psnr(image_path, self.label_2)
     
     def on_botao_resultante_clicked(self):
-        self.load_image(self.scene_img_resultante)
+        result_image_path = self.on_apply_denoising(self.path_image)
+        self.show_image(result_image_path)
     
     def on_botao_original_clicked(self):
-        self.load_image(self.scene_img_original)
+        self.load_image(self.scene_img_original, self.label)
 
     def apply_zoom(self, zoom_factor):
         self.view_img_original.scale(zoom_factor, zoom_factor)
@@ -182,20 +196,34 @@ class Ui_MainWindow(QMainWindow):
         self.view_img_resultante.horizontalScrollBar().setValue(move_factor_x)
         self.view_img_resultante.verticalScrollBar().setValue(move_factor_y)
 
-    def on_apply_denoising(self, image_path, model_path):
+    def on_apply_denoising(self, image_path):
         image = read_image(image_path)
-        resized_image = resize_image(image)
-        patches = create_patches(resized_image)
-        model = load_model(model_path)
-        result = model.predict(patches)
-        final_image = join_patches(result)
+        processed_image = denoise(image)
+        if processed_image is not None:
+            cv2.imwrite(os.path.join(project_folder_path, 'result', 'result.jpg'), image)
+        return os.path.join(project_folder_path, 'result', 'result.jpg')
+    
+    def calculate_psnr(self, image_path, label):
+        image = cv2.imread(image_path)
+        max_pixel_value = 255
+        mse = np.mean((image.astype(np.float32) ** 2))
+        psnr = 10 * np.log10((max_pixel_value ** 2) / mse)
+        label.setText("PSNR: {:.4f}".format(psnr))
+
+    def save_image(self, image):
+        file_name, _ = QFileDialog.getSaveFileName(self, "Salvar Imagem", "", "Imagens (*.png *.jpg *.bmp);;Todos os arquivos (*)")
+        if file_name:
+            if self.pixmap_img_resultante.save(file_name):
+                QMessageBox.information(self, "Salvo com Sucesso", f'Imagem salva em: {file_name}', QMessageBox.StandardButton.Ok)
+            else:
+                QMessageBox.critical(self, "Erro ao Salvar", "Ocorreu um erro ao salvar a imagem.", QMessageBox.StandardButton.Ok)
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Free AI Tools"))
         # self.pushButton.setText(_translate("MainWindow", "Reduzir Ruído"))
-        self.label.setText(_translate("MainWindow", "Nível de Comprometimento: "))
-        self.label_2.setText(_translate("MainWindow", "Nível de Comprometimento: "))
+        self.label.setText(_translate("MainWindow", "PSNR: "))
+        self.label_2.setText(_translate("MainWindow", "PSNR: "))
         # self.pushButton_2.setText(_translate("MainWindow", "Salvar Resultado"))
         # self.pushButton_3.setText(_translate("MainWindow", "Carregar Imagem"))
         self.label_3.setText(_translate("MainWindow", "Ferramentas: "))
