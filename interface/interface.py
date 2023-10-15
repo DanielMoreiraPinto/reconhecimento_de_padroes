@@ -1,117 +1,266 @@
-import sys
-sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
-
+from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QPushButton, QFileDialog, \
+    QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy, QMessageBox
+from PyQt6.QtGui import QPixmap, QFont, QIcon
+from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
+import os
 import cv2
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QFrame  # Importe QFrame
-from PyQt5.QtGui import QImage, QPixmap
+import numpy as np
+from setup_path import folder_relative_path, project_folder_path
+from view import View
+from load_model import read_image, denoise
 
-from denoiser.denoiser import denoise
+
+class Ui_MainWindow(QMainWindow):
+    def setupUi(self, MainWindow):
+
+        QDir.addSearchPath('icons', os.path.join(folder_relative_path, 'icons'))
+
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1100, 700)
+        MainWindow.setFixedSize(1100, 700)
+
+        self.path_image = None
+        self.pos_processed_image_path = None
+        self.pixmap_img_original = None
+        self.pixmap_img_resultante = None
+        self.path_model = 'C:\\Users\\joao_\\Documents\\Trabalho-ReconhecimentoPadroes\\models\\simple_autoencoder.h5'
+
+        self.centralwidget = QWidget(parent=MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+
+        self.scene_img_original = QGraphicsScene()
+        self.view_img_original = View(parent=self.centralwidget)
+        self.view_img_original.setGeometry(QRect(20, 50, 440, 540))  
+        self.view_img_original.setScene(self.scene_img_original)
+        self.view_img_original.setObjectName("view_img_original")
+
+        self.scene_img_resultante = QGraphicsScene()
+        self.view_img_resultante = View(parent=self.centralwidget)
+        self.view_img_resultante.setGeometry(QRect(470, 50, 440, 540))
+        self.view_img_resultante.setScene(self.scene_img_resultante)
+        self.view_img_resultante.setObjectName("view_img_resultante")
+
+        ## para mover e dar zoom nas duas views ao mesmo tempo
+        self.view_img_original.zoom_signal.connect(self.apply_zoom)
+        self.view_img_resultante.zoom_signal.connect(self.apply_zoom)
+        self.view_img_original.move_signal.connect(self.apply_movement)
+        self.view_img_resultante.move_signal.connect(self.apply_movement)
+
+        self.font_sub = QFont()
+        self.font_sub.setFamily("Montserrat")
+        self.font_sub.setPointSize(12)
+
+        self.font_title = QFont()
+        self.font_title.setFamily("Montserrat")
+        self.font_title.setPointSize(18)
+
+        self.label = QLabel(parent=self.centralwidget)
+        self.label.setGeometry(QRect(160, 610, 260, 50))
+        self.label.setObjectName("label")
+        self.label.setFont(self.font_sub)
+
+        self.label_2 = QLabel(parent=self.centralwidget)
+        self.label_2.setGeometry(QRect(620, 610, 260, 50))
+        self.label_2.setObjectName("label_2")
+        self.label_2.setFont(self.font_sub)
+
+        self.label_3 = QLabel(parent=self.centralwidget)
+        self.label_3.setGeometry(QRect(930, 170, 190, 31))
+        self.label_3.setObjectName("label_3")
+        self.label_3.setFont(self.font_title)
+
+        self.label_4 = QLabel(parent=self.centralwidget)
+        self.label_4.setGeometry(QRect(160, 10, 260, 30))
+        self.label_4.setObjectName("label_4")
+        self.label_4.setFont(self.font_title)
+
+        self.label_5 = QLabel(parent=self.centralwidget)
+        self.label_5.setGeometry(QRect(620, 10, 260, 30))
+        self.label_5.setObjectName("label_5")
+        self.label_5.setFont(self.font_title)
+
+        icon_reduzir_ruido = QIcon()
+        icon_reduzir_ruido.addPixmap(QPixmap("icons:denoising.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton = QPushButton(parent=self.centralwidget)
+        self.pushButton.setGeometry(QRect(930, 210, 60, 60))
+        self.pushButton.setObjectName("pushButton")
+        self.pushButton.setIcon(icon_reduzir_ruido)
+        self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
+        self.pushButton.setToolTip("Reduzir Ruído")
+        self.pushButton.clicked.connect(self.on_botao_resultante_clicked)
+
+        icon_salvar_imagem = QIcon()
+        icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_2 = QPushButton(parent=self.centralwidget)
+        self.pushButton_2.setGeometry(QRect(1000, 50, 60, 60))
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_2.setIcon(icon_salvar_imagem)
+        self.pushButton_2.setIconSize(QSize(self.pushButton_2.sizeHint().width(), self.pushButton_2.sizeHint().height()))
+        self.pushButton_2.setToolTip("Salvar Imagem")
+        # self.pushButton_2.clicked.connect(self.on_botao_resultante_clicked)
+        self.pushButton_2.clicked.connect(self.save_image)
+
+        icon_carregar_imagem = QIcon()
+        icon_carregar_imagem.addPixmap(QPixmap("icons:load_image.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_3 = QPushButton(parent=self.centralwidget)
+        self.pushButton_3.setGeometry(QRect(930, 50, 60, 60))
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.pushButton_3.setIcon(icon_carregar_imagem)
+        self.pushButton_3.setIconSize(QSize(self.pushButton_3.sizeHint().width(), self.pushButton_3.sizeHint().height()))
+        self.pushButton_3.setToolTip("Adicionar Imagem")
+        self.pushButton_3.clicked.connect(self.on_botao_original_clicked)
+
+        icon_reduzir_borrao = QIcon()
+        icon_reduzir_borrao.addPixmap(QPixmap("icons:sharpening.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_4 = QPushButton(parent=self.centralwidget)
+        self.pushButton_4.setGeometry(QRect(1000, 210, 60, 60))
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.pushButton_4.setIcon(icon_reduzir_borrao)
+        self.pushButton_4.setIconSize(QSize(self.pushButton_4.sizeHint().width(), self.pushButton_4.sizeHint().height()))
+        self.pushButton_4.setToolTip("Aumentar Nitidez")
+
+        icon_aumentar_resolucao = QIcon()
+        icon_aumentar_resolucao.addPixmap(QPixmap("icons:super-resolution.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_5 = QPushButton(parent=self.centralwidget)
+        self.pushButton_5.setGeometry(QRect(930, 280, 60, 60))
+        self.pushButton_5.setIcon(icon_aumentar_resolucao)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushButton_5.sizePolicy().hasHeightForWidth())
+        self.pushButton_5.setSizePolicy(sizePolicy)
+        self.pushButton_5.setIconSize(QSize(self.pushButton_5.sizeHint().width(), self.pushButton_5.sizeHint().height()))
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.pushButton_5.setToolTip("Aumentar Resolução")
+
+        icon_transferir_estilo = QIcon()
+        icon_transferir_estilo.addPixmap(QPixmap("icons:style-transfer.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_6 = QPushButton(parent=self.centralwidget)
+        self.pushButton_6.setGeometry(QRect(1000, 280, 60, 60))
+        self.pushButton_6.setIcon(icon_transferir_estilo)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushButton_6.sizePolicy().hasHeightForWidth())
+        self.pushButton_6.setIconSize(QSize(self.pushButton_6.sizeHint().width(), self.pushButton_6.sizeHint().height()))
+        self.pushButton_6.setSizePolicy(sizePolicy)
+        self.pushButton_6.setObjectName("pushButton_6")
+        self.pushButton_6.setToolTip("Transferir Estilo")
+
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.statusbar = QStatusBar(parent=MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QMetaObject.connectSlotsByName(MainWindow)
+    
+    def load_image(self, scene, label):
+        file_name, _ =  QFileDialog.getOpenFileName(self, 'Selecione uma imagem...', '.', 'Image files (*.jpg *.gif *.png *.jpeg)')
+        self.path_image = file_name
+        if file_name:
+            print('fala ae', file_name)
+            self.pixmap_img_original = QPixmap(file_name)
+            if not self.pixmap_img_original.isNull(): 
+                scene.clear()
+                scene.addPixmap(self.pixmap_img_original)
+        self.calculate_psnr(self.path_image, label)
+    
+    def show_image(self, image_path):
+        self.pixmap_img_resultante = QPixmap(image_path)
+        if not self.pixmap_img_resultante.isNull():
+            self.scene_img_resultante.clear()
+            self.scene_img_resultante.addPixmap(self.pixmap_img_resultante)
+        self.calculate_psnr(image_path, self.label_2)
+    
+    def on_botao_resultante_clicked(self):
+        result_image_path = self.on_apply_denoising(self.path_image)
+        self.show_image(result_image_path)
+    
+    def on_botao_original_clicked(self):
+        self.load_image(self.scene_img_original, self.label)
+
+    def apply_zoom(self, zoom_factor):
+        self.view_img_original.scale(zoom_factor, zoom_factor)
+        self.view_img_resultante.scale(zoom_factor, zoom_factor)
+    
+    def apply_movement(self, move_factor_x, move_factor_y):
+        self.view_img_original.horizontalScrollBar().setValue(move_factor_x)
+        self.view_img_original.verticalScrollBar().setValue(move_factor_y)
+        self.view_img_resultante.horizontalScrollBar().setValue(move_factor_x)
+        self.view_img_resultante.verticalScrollBar().setValue(move_factor_y)
+
+    def on_apply_denoising(self, image_path):
+        image = read_image(image_path)
+        processed_image = denoise(image)
+        if processed_image is not None:
+            cv2.imwrite(os.path.join(project_folder_path, 'result', 'result.jpg'), image)
+        return os.path.join(project_folder_path, 'result', 'result.jpg')
+    
+    def calculate_psnr(self, image_path, label):
+        image = cv2.imread(image_path)
+        max_pixel_value = 255
+        mse = np.mean((image.astype(np.float32) ** 2))
+        psnr = 10 * np.log10((max_pixel_value ** 2) / mse)
+        label.setText("PSNR: {:.4f}".format(psnr))
+
+    def save_image(self, image):
+        file_name, _ = QFileDialog.getSaveFileName(self, "Salvar Imagem", "", "Imagens (*.png *.jpg *.bmp);;Todos os arquivos (*)")
+        if file_name:
+            if self.pixmap_img_resultante.save(file_name):
+                QMessageBox.information(self, "Salvo com Sucesso", f'Imagem salva em: {file_name}', QMessageBox.StandardButton.Ok)
+            else:
+                QMessageBox.critical(self, "Erro ao Salvar", "Ocorreu um erro ao salvar a imagem.", QMessageBox.StandardButton.Ok)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "Free AI Tools"))
+        # self.pushButton.setText(_translate("MainWindow", "Reduzir Ruído"))
+        self.label.setText(_translate("MainWindow", "PSNR: "))
+        self.label_2.setText(_translate("MainWindow", "PSNR: "))
+        # self.pushButton_2.setText(_translate("MainWindow", "Salvar Resultado"))
+        # self.pushButton_3.setText(_translate("MainWindow", "Carregar Imagem"))
+        self.label_3.setText(_translate("MainWindow", "Ferramentas: "))
+        # self.pushButton_4.setText(_translate("MainWindow", "Reduzir Borrão"))
+        # self.pushButton_5.setText(_translate("MainWindow", "Aumentar Resolução"))
+        # self.pushButton_6.setText(_translate("MainWindow", "Transferir Estilo"))
+        self.label_4.setText(_translate("MainWindow", "Imagem Original"))
+        self.label_5.setText(_translate("MainWindow", "Imagem Resultante"))
 
 
-class ImageProcessingApp(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
-        self.setWindowTitle("Processamento de Imagem")
-        self.setGeometry(100, 100, 800, 600)
-
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-
-        self.original_image = None
-        self.noise_image = None
-
-        self.current_frame = None
-
-        self.page = 1  # 1 para carregar imagem, 2 para processar imagem
-
-        self.load_button = QPushButton("Carregar Imagem", self)
-        self.load_button.clicked.connect(self.loadImage)
-
-        self.detect_button = QPushButton("Detectar Ruído", self)
-        self.detect_button.clicked.connect(self.detectNoise)
-        self.remove_button = QPushButton("Remover Ruído", self)
-        self.remove_button.clicked.connect(self.removeNoise)
-        self.download_button = QPushButton("Download da Imagem sem Ruído", self)
-        self.download_button.clicked.connect(self.saveImage)
-        self.download_button.setEnabled(False)
-
-        self.layout = QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
-
-        self.label_original = QLabel(self)
-        self.label_processed = QLabel(self)
-
-        self.layout.addWidget(self.load_button)
-
-    def clear_layout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def show_page(self):
-        self.clear_layout(self.layout)
-
-        self.layout.addWidget(self.detect_button)
-        self.layout.addWidget(self.remove_button)
-        self.layout.addWidget(self.download_button)
-
-        # Moldura para imagem carregada
-        frame_original = QLabel(self)
-        frame_original.setFixedSize(300, 300)
-        frame_original.setFrameShape(QFrame.Box)  # Adicione moldura
-        self.layout.addWidget(frame_original)
-
-        # Moldura para imagem sem ruído
-        frame_processed = QLabel(self)
-        frame_processed.setFixedSize(300, 300)
-        frame_processed.setFrameShape(QFrame.Box)  # Adicione moldura
-        self.layout.addWidget(frame_processed)
-
-        # Exibe as imagens dentro das molduras
-        self.show_image(self.original_image, frame_original)
-        self.show_image(self.noise_image, frame_processed)
-
-    def loadImage(self):
-        file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getOpenFileName(filter="Image files (*.png *.jpg *.bmp *.jpeg *.gif *.tiff)")
-        
-        if file_path:
-            self.original_image = cv2.imread(file_path)
-            self.page = 2
-            self.show_page()
-
-    def show_image(self, cv_image, label_widget):
-        if cv_image is not None:
-            height, width, channel = cv_image.shape
-            bytes_per_line = 3 * width
-            q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(q_image)
-            label_widget.setPixmap(pixmap)
-            label_widget.setScaledContents(True)
-
-    def detectNoise(self):
-        # Implemente a detecção de ruído aqui usando o modelo de detecção de ruído
-        # Atualize a variável self.noise_image com a imagem detectada
-        pass
-
-    def removeNoise(self):
-        self.noise_image = denoise(self.original_image)
-        self.show_page()
-        self.download_button.setEnabled(True)
-
-    def saveImage(self):
-        if self.noise_image is not None:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            file_path, _ = QFileDialog.getSaveFileName(self, "Salvar Imagem", "", "PNG Files (*.png)", options=options)
-            
-            if file_path:
-                cv2.imwrite(file_path, self.noise_image)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
+    import sys
     app = QApplication(sys.argv)
-    window = ImageProcessingApp()
-    window.show()
-    sys.exit(app.exec_())
+    app.setStyleSheet("""
+    QWidget {
+        background-color: #333333;
+        color: #ffffff;
+    }
+    QPushButton {
+        background-color: #6F42C1;
+        color: #FFFFFF;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+    }
+    QPushButton:hover {
+        background-color: #5A32A3;
+    }   
+    QLabel {
+        
+    }
+    QGraphicsView {
+        background-color: #696969;
+    }
+    """)
+    MainWindow = QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec())

@@ -3,6 +3,8 @@
 
 # Denoiser
 denoiser/data/
+datasets/Mi3_Aligned
+datasets/NIND
 noisedetect/teste
 
 # Byte-compiled / optimized / DLL files
