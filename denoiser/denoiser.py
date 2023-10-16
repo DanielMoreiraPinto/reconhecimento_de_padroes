@@ -227,7 +227,7 @@ RENOIR_DATASET_PATHS = ['D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\R
                         'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\RENOIR\\T3i_Aligned']
 SIDD_DATASET_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\SIDD_Medium_Srgb\\Data'
 TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
-TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\data\\test_sample'
+TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\\data\\test_sample'
 
 # MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
