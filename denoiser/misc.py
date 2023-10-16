@@ -28,17 +28,30 @@
 
 
 
-from readimgs_sidd import read_sidd
-import os
-import cv2 as cv
+# from readimgs_sidd import read_sidd
+# import os
+# import cv2 as cv
 
-root_folder = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\SIDD_Medium_Srgb\\Data'
-targets, labels = read_sidd(root_folder, num_images=40)
-x = 1
-# print the images
-output_folder = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\test\\sidd'
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
-for i in range(len(targets)):
-    cv.imwrite(os.path.join(output_folder, str(i)+'_target_'+'.jpg'), targets[i])
-    cv.imwrite(os.path.join(output_folder, str(i)+'_label_'+'.jpg'), labels[i])
+# root_folder = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\SIDD_Medium_Srgb\\Data'
+# targets, labels = read_sidd(root_folder, num_images=40)
+# x = 1
+# # print the images
+# output_folder = 'C:\\Users\\danie\\OneDrive\\Documentos\\Mestrado\\reconhecimento_de_padroes\\denoiser\\data\\test\\sidd'
+# if not os.path.exists(output_folder):
+#     os.makedirs(output_folder)
+# for i in range(len(targets)):
+#     cv.imwrite(os.path.join(output_folder, str(i)+'_target_'+'.jpg'), targets[i])
+#     cv.imwrite(os.path.join(output_folder, str(i)+'_label_'+'.jpg'), labels[i])
+
+#  I have numbers from 1 to 40. I want to put 60% of them in one group, 20% in another and
+# 20% in another.
+import numpy as np
+import random
+
+numbers = np.arange(1, 41)
+random.shuffle(numbers)
+print(numbers)
+print(len(numbers))
+print(sorted(numbers[:24]))
+print(sorted(numbers[24:32]))
+print(sorted(numbers[32:]))

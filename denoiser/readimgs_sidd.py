@@ -30,8 +30,10 @@ def read_sidd(root_folder, num_images=0):
             gt_image, noisy_image = find_gt_and_noisy_images(folder_path)
             
             if gt_image and noisy_image:
-                targets.append(cv.imread(noisy_image))
-                labels.append(cv.imread(gt_image))
+                # targets.append(cv.imread(noisy_image))
+                # labels.append(cv.imread(gt_image))
+                targets.append(noisy_image)
+                labels.append(gt_image)
         if num_images > 0 and len(targets) % num_images == 0:
             break
     print('Reading complete.')

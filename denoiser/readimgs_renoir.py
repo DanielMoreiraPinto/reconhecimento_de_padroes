@@ -1,5 +1,6 @@
 import cv2
 import os
+import glob
 
 # Function to find reference and noisy images in a folder
 def find_images_in_folder(folder):
@@ -7,15 +8,18 @@ def find_images_in_folder(folder):
     noisy_image = None
 
     # Iterate through files in the folder
-    for filename in os.listdir(folder):
+    for filename in glob.glob(folder + "/*"):
         if filename.lower().endswith(".jpg"):
-            file_path = os.path.join(folder, filename)
+            # file_path = os.path.join(folder, filename)
+            file_path = filename
 
             # Check if the image contains "Reference" or "Noisy"
             if "reference" in filename.lower():
-                reference_image = cv2.imread(file_path)
+                # reference_image = cv2.imread(file_path)
+                reference_image = file_path
             elif "noisy" in filename.lower():
-                noisy_image = cv2.imread(file_path)
+                # noisy_image = cv2.imread(file_path)
+                noisy_image = file_path
 
             # Break if both images are found
             if reference_image is not None and noisy_image is not None:
