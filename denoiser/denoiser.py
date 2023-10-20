@@ -185,7 +185,7 @@ def training(ckpt_path = None, num_images=0, patch_ratio=0):
         X_val, y_val = patchify(X_val, y_val, patch_ratio)
     print("Creating test patches...")
     X_test, y_test = patchify(X_test, y_test, patch_ratio)
-    print("Patches created.")
+    print(f"{len(X_train)} patches for train, {len(X_val)} patches for validation and {len(X_test)} patches for test.")
     
     # Train the model
     if ckpt_path is not None:
