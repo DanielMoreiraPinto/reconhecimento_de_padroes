@@ -1,5 +1,4 @@
-# import sys
-# sys.path.append('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes')
+import setup_path
 
 import os
 import pickle
@@ -11,10 +10,10 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
-from readimgs_renoir import read_renoir
-from readimgs_sidd import read_sidd
-from networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
-from patchify import split_image, reconstruct_image
+from denoiser.readimgs_renoir import read_renoir
+from denoiser.readimgs_sidd import read_sidd
+from denoiser.networks import simple_autoencoder, cbd_net, rid_net, dn_cnn
+from denoiser.patchify import split_image, reconstruct_image
 
 np.random.seed(42)
 
@@ -229,18 +228,14 @@ SIDD_DATASET_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\SIDD_
 TEST_SAVE_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\bases\\test'
 TEST_SAMPLES_PATH = 'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\\data\\test_sample'
 
-# MODEL_TYPE = 'simple_autoencoder'
+MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
-MODEL_TYPE = 'rid_net'
+# MODEL_TYPE = 'rid_net'
 # MODEL_TYPE = 'dn_cnn'
-MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\{MODEL_TYPE}.h5'
+MODEL_PATH = os.path.join(os.getcwd(), 'denoiser', 'data', 'models', f'{MODEL_TYPE}.h5')
 # MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
 
 EPOCHS = 100
 BATCH_SIZE = 4
 
-if __name__ == "__main__":
-    training()
-    # training(ckpt_path=MODEL_PATH)
-    # test_denoising(TEST_SAVE_PATH, TEST_SAMPLES_PATH)
-    pass
+
