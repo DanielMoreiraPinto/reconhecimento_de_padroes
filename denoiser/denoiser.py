@@ -198,7 +198,37 @@ def denoise(image):
     denoised = denoised * 255.0
     denoised = denoised.astype(np.uint8)
     denoised = reconstruct_image(denoised, img_shape)
+    denoised = smooth_image_lines(denoised)
     return denoised
+
+def smooth_image_lines(image, patch_size=256, blur_radius=3, kernel_size=3):
+    num_rows, num_cols, _ = image.shape
+    num_horizontal_patches = num_cols // patch_size
+    num_vertical_patches = num_rows // patch_size
+    adjust = 0
+
+    for i in range(1, num_horizontal_patches):
+        x = i * patch_size
+        line = image[:, (x - blur_radius):(x + blur_radius-adjust), :]
+        for i in range(1, blur_radius):
+            line[:, i, :] = line[:, 0, :]
+            line[:, -i, :] = line[:, -1, :]
+        # image[:, (x - blur_radius):(x + blur_radius), :] = cv.medianBlur(line, kernel_size)
+        image[:, (x - blur_radius):(x + blur_radius-adjust), :] = cv.GaussianBlur(line, (kernel_size, kernel_size), 0)
+        image[:, (x - blur_radius):(x + blur_radius-adjust), :] = line
+       
+    for i in range(1, num_vertical_patches):
+        y = i * patch_size
+        line = image[(y - blur_radius):(y + blur_radius-adjust), :, :]
+        for i in range(1, blur_radius):
+            line[i, :, :] = line[0, :, :]
+            line[-i, :, :] = line[-1, :, :]
+        # image[(y - blur_radius):(y + blur_radius), :, :] = cv.medianBlur(line, kernel_size)
+        image[(y - blur_radius):(y + blur_radius-adjust), :, :] = cv.GaussianBlur(line, (kernel_size, kernel_size), 0)
+        image[(y - blur_radius):(y + blur_radius-adjust), :, :] = line
+
+    return image
+    
 
 def test_denoising(test_path, save_path):
     print("Loading testing set...")

@@ -203,7 +203,9 @@ class Ui_MainWindow(QMainWindow):
         image = read_image(image_path)
         processed_image = denoise(image)
         if processed_image is not None:
-            cv2.imwrite(os.path.join(os.getcwd(), 'result', 'result.jpg'), image)
+            if not os.path.exists(os.path.join(os.getcwd(), 'result')):
+                os.makedirs(os.path.join(os.getcwd(), 'result'))
+            cv2.imwrite(os.path.join(os.getcwd(), 'result', 'result.jpg'), processed_image)
         return os.path.join(os.getcwd(), 'result', 'result.jpg')
     
     def calculate_psnr(self, image_path, label):
