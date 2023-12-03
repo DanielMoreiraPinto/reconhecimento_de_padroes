@@ -1,0 +1,1 @@
+python demo_release.py -i imgs/ansel_adams3.jpg
