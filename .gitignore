@@ -9,6 +9,11 @@ noisedetect/teste
 result/
 *.jpg
 
+# Super Resolution
+superesolution/swin2sr/inputs/
+superesolution/swin2sr/model_zoo/
+superesolution/swin2sr/results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
