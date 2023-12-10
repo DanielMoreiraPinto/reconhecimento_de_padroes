@@ -215,8 +215,8 @@ class Ui_MainWindow(QMainWindow):
         processed_image = denoise(image)
         return processed_image
         # if processed_image is not None:
-            if not os.path.exists(os.path.join(os.getcwd(), 'result')):
-                os.makedirs(os.path.join(os.getcwd(), 'result'))
+            # if not os.path.exists(os.path.join(os.getcwd(), 'result')):
+            #     os.makedirs(os.path.join(os.getcwd(), 'result'))
         #     cv2.imwrite(os.path.join(os.getcwd(), 'result', 'result.jpg'), processed_image)
         # return os.path.join(os.getcwd(), 'result', 'result.jpg')
     
