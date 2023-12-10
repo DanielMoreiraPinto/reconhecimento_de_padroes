@@ -2,7 +2,7 @@
 import argparse
 import matplotlib.pyplot as plt
 
-from colorizers import *
+from colorization.colorizers import *
 
 def colorize_image(path):
 	parser = argparse.ArgumentParser()
@@ -61,4 +61,4 @@ def colorize_image(path):
 
 	return out_img_eccv16
 
-out_img_eccv16 = colorize_image('imgs/ansel_adams3.jpg')
+# out_img_eccv16 = colorize_image('imgs/ansel_adams3.jpg')

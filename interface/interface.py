@@ -10,6 +10,7 @@ from view import View
 from model_utils import read_image
 from denoiser.denoiser import denoise
 from styletransfer.transfer import style_transfer
+from colorization.demo_release import colorize_image
 
 
 class Ui_MainWindow(QMainWindow):
@@ -138,14 +139,15 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_3.clicked.connect(self.on_botao_original_clicked)
 
         icon_reduzir_borrao = QIcon()
-        icon_reduzir_borrao.addPixmap(QPixmap("icons:sharpening.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        icon_reduzir_borrao.addPixmap(QPixmap("icons:colorization.png"), QIcon.Mode.Normal, QIcon.State.Off)
 
         self.pushButton_4 = QPushButton(parent=self.centralwidget)
         self.pushButton_4.setGeometry(QRect(1000, 210, 60, 60))
         self.pushButton_4.setObjectName("pushButton_4")
         self.pushButton_4.setIcon(icon_reduzir_borrao)
         self.pushButton_4.setIconSize(QSize(self.pushButton_4.sizeHint().width(), self.pushButton_4.sizeHint().height()))
-        self.pushButton_4.setToolTip("Aumentar Nitidez")
+        self.pushButton_4.setToolTip("Colorização")
+        self.pushButton_4.clicked.connect(self.on_apply_colorization)
 
         icon_aumentar_resolucao = QIcon()
         icon_aumentar_resolucao.addPixmap(QPixmap("icons:super-resolution.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -212,6 +214,12 @@ class Ui_MainWindow(QMainWindow):
             processed_image = style_transfer(self.path_image, self.path_style)
             self.result_image = processed_image
             self.show_image(processed_image)
+
+    def on_apply_colorization(self):
+        self.result_image = colorize_image(self.path_image)
+        self.show_image(self.result_image)
+        self.show_labels_psnr(True)
+        self.show_labels_estilo(False)
     
         
     def show_labels_estilo(self, flag):
