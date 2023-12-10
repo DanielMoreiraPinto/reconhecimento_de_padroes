@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QPushButton, QFileDialog, \
     QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy, QMessageBox
-from PyQt6.QtGui import QPixmap, QFont, QIcon
+from PyQt6.QtGui import QPixmap, QFont, QIcon, QImage
 from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
 import os
 import cv2
@@ -88,7 +88,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton.setIcon(icon_reduzir_ruido)
         self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
         self.pushButton.setToolTip("Reduzir Ruído")
-        self.pushButton.clicked.connect(self.on_botao_resultante_clicked)
+        self.pushButton.clicked.connect(self.on_botao_denoiser)
 
         icon_salvar_imagem = QIcon()
         icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -137,6 +137,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_5.setIconSize(QSize(self.pushButton_5.sizeHint().width(), self.pushButton_5.sizeHint().height()))
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_5.setToolTip("Aumentar Resolução")
+        self.pushButton_5.clicked.connect(self.on_botao_super_resolution)
 
         icon_transferir_estilo = QIcon()
         icon_transferir_estilo.addPixmap(QPixmap("icons:style-transfer.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -165,23 +166,32 @@ class Ui_MainWindow(QMainWindow):
         file_name, _ =  QFileDialog.getOpenFileName(self, 'Selecione uma imagem...', '.', 'Image files (*.jpg *.gif *.png *.jpeg)')
         self.path_image = file_name
         if file_name:
-            print('fala ae', file_name)
             self.pixmap_img_original = QPixmap(file_name)
             if not self.pixmap_img_original.isNull(): 
                 scene.clear()
                 scene.addPixmap(self.pixmap_img_original)
-        self.calculate_psnr(self.path_image, label)
+        image = cv2.imread(self.path_image)
+        print('shape da imagem original ', image.shape)
+        self.calculate_psnr(image, label)
     
-    def show_image(self, image_path):
-        self.pixmap_img_resultante = QPixmap(image_path)
+    def show_image(self, result_image):
+        image = QImage(result_image, result_image.shape[1],\
+                            result_image.shape[0], result_image.shape[1] * 3, QImage.Format.Format_RGB888)
+        self.pixmap_img_resultante = QPixmap(image)
         if not self.pixmap_img_resultante.isNull():
             self.scene_img_resultante.clear()
             self.scene_img_resultante.addPixmap(self.pixmap_img_resultante)
-        self.calculate_psnr(image_path, self.label_2)
+        self.calculate_psnr(result_image, self.label_2)
     
-    def on_botao_resultante_clicked(self):
+    def on_botao_denoiser(self):
         result_image_path = self.on_apply_denoising(self.path_image)
+        print('shape da imagem resultante ', result_image_path.shape)
         self.show_image(result_image_path)
+
+    def on_botao_super_resolution(self):
+        result_image_path = self.on_apply_super_resolution(self.path_image)
+
+        # self.show_image(result_image_path)
     
     def on_botao_original_clicked(self):
         self.load_image(self.scene_img_original, self.label)
@@ -199,12 +209,17 @@ class Ui_MainWindow(QMainWindow):
     def on_apply_denoising(self, image_path):
         image = read_image(image_path)
         processed_image = denoise(image)
-        if processed_image is not None:
-            cv2.imwrite(os.path.join(project_folder_path, 'result', 'result.jpg'), image)
-        return os.path.join(project_folder_path, 'result', 'result.jpg')
+        return processed_image
+        # if processed_image is not None:
+        #     cv2.imwrite(os.path.join(project_folder_path, 'result', 'result.jpg'), image)
+        # return os.path.join(project_folder_path, 'result', 'result.jpg')
     
-    def calculate_psnr(self, image_path, label):
-        image = cv2.imread(image_path)
+    def on_apply_super_resolution(self, image_path):
+        image = read_image(image_path)
+        print('tipo da imagem ', type(image))
+    
+    def calculate_psnr(self, image, label):
+        # image = cv2.imread(image_path)
         max_pixel_value = 255
         mse = np.mean((image.astype(np.float32) ** 2))
         psnr = 10 * np.log10((max_pixel_value ** 2) / mse)
