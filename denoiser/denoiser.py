@@ -262,7 +262,7 @@ MODEL_TYPE = 'simple_autoencoder'
 # MODEL_TYPE = 'cbd_net'
 # MODEL_TYPE = 'rid_net'
 # MODEL_TYPE = 'dn_cnn'
-MODEL_PATH = os.path.join(os.getcwd(), 'denoiser', 'data', 'models', f'{MODEL_TYPE}.h5')
+MODEL_PATH = os.path.join(os.getcwd(), 'models', f'{MODEL_TYPE}.h5')
 # MODEL_PATH = f'D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\denoiser\\data\\models\\v2\\{MODEL_TYPE}.h5'
 
 EPOCHS = 100
