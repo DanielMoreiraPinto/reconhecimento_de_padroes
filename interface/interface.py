@@ -5,16 +5,19 @@ from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
 import os
 import cv2
 import numpy as np
-from setup_path import folder_relative_path, project_folder_path
+import setup_path # Caminho que organiza o caminho do sistema
 from view import View
-from load_model import read_image, denoise
+from model_utils import read_image
+from denoiser.denoiser import denoise
 
 
 class Ui_MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
 
-        QDir.addSearchPath('icons', os.path.join(folder_relative_path, 'icons'))
-
+        QDir.addSearchPath('icons', os.path.join(os.getcwd(), 'interface', 'icons'))
+        # x = os.path.join(os.getcwd(), 'result', 'result.jpg')
+        # y = os.path.join(os.getcwd(), 'interface', 'icons')
+        
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1100, 700)
         MainWindow.setFixedSize(1100, 700)
@@ -166,6 +169,7 @@ class Ui_MainWindow(QMainWindow):
         file_name, _ =  QFileDialog.getOpenFileName(self, 'Selecione uma imagem...', '.', 'Image files (*.jpg *.gif *.png *.jpeg)')
         self.path_image = file_name
         if file_name:
+            # print('fala ae', file_name)
             self.pixmap_img_original = QPixmap(file_name)
             if not self.pixmap_img_original.isNull(): 
                 scene.clear()
@@ -211,8 +215,10 @@ class Ui_MainWindow(QMainWindow):
         processed_image = denoise(image)
         return processed_image
         # if processed_image is not None:
-        #     cv2.imwrite(os.path.join(project_folder_path, 'result', 'result.jpg'), image)
-        # return os.path.join(project_folder_path, 'result', 'result.jpg')
+            if not os.path.exists(os.path.join(os.getcwd(), 'result')):
+                os.makedirs(os.path.join(os.getcwd(), 'result'))
+        #     cv2.imwrite(os.path.join(os.getcwd(), 'result', 'result.jpg'), processed_image)
+        # return os.path.join(os.getcwd(), 'result', 'result.jpg')
     
     def on_apply_super_resolution(self, image_path):
         image = read_image(image_path)

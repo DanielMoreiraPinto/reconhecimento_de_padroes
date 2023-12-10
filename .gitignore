@@ -6,6 +6,8 @@ denoiser/data/
 datasets/Mi3_Aligned
 datasets/NIND
 noisedetect/teste
+result/
+*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
