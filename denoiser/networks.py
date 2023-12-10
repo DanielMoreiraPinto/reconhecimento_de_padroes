@@ -27,7 +27,7 @@ def simple_autoencoder():
 
     # Autoencoder
     autoencoder = Model(input, x)
-    print(autoencoder.summary())
+    # print(autoencoder.summary())
     autoencoder.compile(optimizer=tf.keras.optimizers.Adam(1e-03),
                         loss=tf.keras.losses.MeanSquaredError(),
                         metrics=[tf.keras.metrics.MeanSquaredError()])
@@ -76,7 +76,7 @@ def cbd_net():
     out = Add()([out,input])
 
     CBDNet = Model(input,out)
-    print(CBDNet.summary())
+    # print(CBDNet.summary())
     CBDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
                    metrics=[tf.keras.metrics.MeanSquaredError()])
     return CBDNet
@@ -148,7 +148,7 @@ def rid_net():
     out = Add()([conv2,input])
 
     RIDNet = Model(input,out)
-    print(RIDNet.summary())
+    # print(RIDNet.summary())
     RIDNet.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
                    metrics=[tf.keras.metrics.MeanSquaredError()])
     return RIDNet
@@ -164,7 +164,7 @@ def dn_cnn():
     x = Conv2D(3, kernel_size=(3,3), padding='same',name='conv2d_l3')(x)
     x = Subtract(name='subtract')([input, x])   
     model = Model(input,x)
-    print(model.summary())
+    # print(model.summary())
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-03), loss=tf.keras.losses.MeanSquaredError(),
                    metrics=[tf.keras.metrics.MeanSquaredError()])
     
