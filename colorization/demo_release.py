@@ -59,6 +59,16 @@ def colorize_image(path):
 	plt.show()
 	'''
 
-	return out_img_eccv16
+	return tensor_to_image(out_img_eccv16)
 
-# out_img_eccv16 = colorize_image('imgs/ansel_adams3.jpg')
+
+def tensor_to_image(tensor):
+  tensor = tensor*255
+  tensor = np.array(tensor, dtype=np.uint8)
+  if np.ndim(tensor)>3:
+    assert tensor.shape[0] == 1
+    tensor = tensor[0]
+  # return PIL.Image.fromarray(tensor)
+  return tensor
+# out_img_eccv16 = colorize_image('C:\\Users\\joao_\\Documents\\Trabalho-ReconhecimentoPadroes\\datasets\\teste.jpg')
+# print('tipo ', type(out_img_eccv16))

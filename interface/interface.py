@@ -221,7 +221,6 @@ class Ui_MainWindow(QMainWindow):
         self.show_labels_psnr(True)
         self.show_labels_estilo(False)
     
-        
     def show_labels_estilo(self, flag):
         self.label_estilo.setVisible(flag)
         self.label_6.setVisible(flag)
