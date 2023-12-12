@@ -1,10 +1,11 @@
+import setup_path
 import argparse
 import cv2
 import numpy as np
 import torch
 from cog import BasePredictor, Input, Path
 
-from main_test_swin2sr import define_model, test
+from superesolution.main_test_swin2sr import define_model, test
 
 
 class Predictor(BasePredictor):

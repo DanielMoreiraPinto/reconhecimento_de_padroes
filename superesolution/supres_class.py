@@ -1,3 +1,5 @@
+import setup_path
+
 import argparse
 import cv2
 import glob
@@ -6,9 +8,9 @@ from collections import OrderedDict
 import os
 import torch
 import requests
-
-from models.network_swin2sr import Swin2SR as net
-from utils import util_calculate_psnr_ssim as util
+# print(os.getcwd())
+from superesolution.models.network_swin2sr import Swin2SR as net
+from superesolution.utils import util_calculate_psnr_ssim as util
 
 # os.chdir('superesolution/swin2sr')
 
@@ -241,5 +243,6 @@ def aumentar_resolucao(img_path):
     img = sr.main(img_path)
     return img
 
-img = aumentar_resolucao('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\superesolution\\inputs\\shanghai.jpg')
-cv2.imwrite('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\superesolution\\results\\shanghai.jpg', img)
+
+# img = aumentar_resolucao('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\superesolution\\inputs\\shanghai.jpg')
+# cv2.imwrite('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\superesolution\\results\\shanghai.jpg', img)
