@@ -9,6 +9,13 @@ noisedetect/teste
 result/
 *.jpg
 
+# Deblur
+deblur/weights/
+deblur/results/
+deblur/*/input/
+deblur/*/groundtruth/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
