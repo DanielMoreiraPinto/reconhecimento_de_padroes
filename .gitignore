@@ -10,9 +10,9 @@ result/
 *.jpg
 
 # Super Resolution
-superesolution/swin2sr/inputs/
-superesolution/swin2sr/model_zoo/
-superesolution/swin2sr/results/
+superesolution/inputs/
+superesolution/model_zoo/
+superesolution/results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

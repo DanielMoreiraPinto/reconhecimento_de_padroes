@@ -10,7 +10,7 @@ import requests
 from models.network_swin2sr import Swin2SR as net
 from utils import util_calculate_psnr_ssim as util
 
-os.chdir('superesolution/swin2sr')
+# os.chdir('superesolution/swin2sr')
 
 def main():
     parser = argparse.ArgumentParser()
