@@ -14,22 +14,22 @@ from utils import util_calculate_psnr_ssim as util
 
 def main():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--task', type=str, default='compressed_sr', help='classical_sr, lightweight_sr, real_sr, '
-    #                                                                  'gray_dn, color_dn, jpeg_car, color_jpeg_car')
-    # parser.add_argument('--scale', type=int, default=4, help='scale factor: 1, 2, 3, 4, 8') # 1 for dn and jpeg car
-    # parser.add_argument('--model_path', type=str,
-    #                     default='model_zoo/Swin2SR_CompressedSR_X4_48.pth')
-    # parser.add_argument('--training_patch_size', type=int, default=48, help='patch size used in training Swin2SR. '
-    #                                    'Just used to differentiate two different settings in Table 2 of the paper. '
-    #                                    'Images are NOT tested patch by patch.')
-    parser.add_argument('--task', type=str, default='lightweight_sr', help='classical_sr, lightweight_sr, real_sr, '
+    parser.add_argument('--task', type=str, default='compressed_sr', help='classical_sr, lightweight_sr, real_sr, '
                                                                      'gray_dn, color_dn, jpeg_car, color_jpeg_car')
-    parser.add_argument('--scale', type=int, default=2, help='scale factor: 1, 2, 3, 4, 8') # 1 for dn and jpeg car
+    parser.add_argument('--scale', type=int, default=4, help='scale factor: 1, 2, 3, 4, 8') # 1 for dn and jpeg car
     parser.add_argument('--model_path', type=str,
-                        default='model_zoo/Swin2SR_Lightweight_X2_64.pth')
-    parser.add_argument('--training_patch_size', type=int, default=64, help='patch size used in training Swin2SR. '
+                        default='model_zoo/Swin2SR_CompressedSR_X4_48.pth')
+    parser.add_argument('--training_patch_size', type=int, default=48, help='patch size used in training Swin2SR. '
                                        'Just used to differentiate two different settings in Table 2 of the paper. '
                                        'Images are NOT tested patch by patch.')
+    # parser.add_argument('--task', type=str, default='lightweight_sr', help='classical_sr, lightweight_sr, real_sr, '
+    #                                                                  'gray_dn, color_dn, jpeg_car, color_jpeg_car')
+    # parser.add_argument('--scale', type=int, default=2, help='scale factor: 1, 2, 3, 4, 8') # 1 for dn and jpeg car
+    # parser.add_argument('--model_path', type=str,
+    #                     default='model_zoo/Swin2SR_Lightweight_X2_64.pth')
+    # parser.add_argument('--training_patch_size', type=int, default=64, help='patch size used in training Swin2SR. '
+    #                                    'Just used to differentiate two different settings in Table 2 of the paper. '
+    #                                    'Images are NOT tested patch by patch.')
     parser.add_argument('--noise', type=int, default=15, help='noise level: 15, 25, 50')
     parser.add_argument('--jpeg', type=int, default=40, help='scale factor: 10, 20, 30, 40')
     parser.add_argument('--large_model', action='store_true', help='use large model, only provided for real image sr')

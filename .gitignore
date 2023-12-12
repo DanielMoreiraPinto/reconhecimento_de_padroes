@@ -1,6 +1,11 @@
 # Visual Studio Code
 .vscode/
 
+# Repositorio
+model_zoo/*.pth
+model_zoo/*.tar
+model_zoo/*.h5
+
 # Denoiser
 denoiser/data/
 datasets/Mi3_Aligned
