@@ -1,24 +1,32 @@
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView, QPushButton, QFileDialog, \
-    QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy, QMessageBox
+    QMainWindow, QApplication, QStatusBar, QWidget, QLabel, QSizePolicy, QMessageBox, QProgressDialog
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QImage
-from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject
+from PyQt6.QtCore import QDir, QSize, QRect, QCoreApplication, QMetaObject, Qt, QThread
 import os
 import cv2
 import numpy as np
 import setup_path # Caminho que organiza o caminho do sistema
 from view import View
+
+### modelos
 from model_utils import read_image
 from denoiser.denoiser import denoise
 from styletransfer.transfer import style_transfer
 from colorization.demo_release import colorize_image
+from superesolution.supres_class import aumentar_resolucao
+from deblur.test.testerClass import chamar_deblur
 
+
+class WorkerThread(QThread):
+    def run(self):
+        # Simula uma operação demorada
+        import time
+        time.sleep(5)
 
 class Ui_MainWindow(QMainWindow):
     def setupUi(self, MainWindow):
 
         QDir.addSearchPath('icons', os.path.join(os.getcwd(), 'interface', 'icons'))
-        # x = os.path.join(os.getcwd(), 'result', 'result.jpg')
-        # y = os.path.join(os.getcwd(), 'interface', 'icons')
         
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1100, 700)
@@ -34,7 +42,6 @@ class Ui_MainWindow(QMainWindow):
         self.pos_processed_image_path = None
         self.pixmap_img_original = None
         self.pixmap_img_resultante = None
-        self.path_model = 'C:\\Users\\joao_\\Documents\\Trabalho-ReconhecimentoPadroes\\models\\simple_autoencoder.h5'
 
         self.centralwidget = QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -163,7 +170,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_5.setIconSize(QSize(self.pushButton_5.sizeHint().width(), self.pushButton_5.sizeHint().height()))
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_5.setToolTip("Aumentar Resolução")
-        self.pushButton_5.clicked.connect(self.on_botao_super_resolution)
+        self.pushButton_5.clicked.connect(self.on_apply_super_resolution)
 
         icon_transferir_estilo = QIcon()
         icon_transferir_estilo.addPixmap(QPixmap("icons:style-transfer.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -180,6 +187,18 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton_6.setObjectName("pushButton_6")
         self.pushButton_6.setToolTip("Transferir Estilo")
         self.pushButton_6.clicked.connect(self.on_apply_style_transfer)
+
+        icon_deblur = QIcon()
+        icon_deblur.addPixmap(QPixmap("icons:sharpening.png"), QIcon.Mode.Normal, QIcon.State.Off)
+
+        self.pushButton_7 = QPushButton(parent=self.centralwidget)
+        self.pushButton_7.setGeometry(QRect(930, 350, 60, 60))
+        self.pushButton_7.setIcon(icon_deblur)
+        self.pushButton_7.setIconSize(QSize(self.pushButton_7.sizeHint().width(), self.pushButton_7.sizeHint().height()))
+        self.pushButton_7.setSizePolicy(sizePolicy)
+        self.pushButton_7.setObjectName("pushButton_7")
+        self.pushButton_7.setToolTip("Deblur")
+        self.pushButton_7.clicked.connect(self.on_apply_deblur)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(parent=MainWindow)
@@ -220,6 +239,31 @@ class Ui_MainWindow(QMainWindow):
         self.show_image(self.result_image)
         self.show_labels_psnr(True)
         self.show_labels_estilo(False)
+
+    def on_apply_denoising(self):
+        self.image = read_image(self.path_image)
+        self.result_image = denoise(self.image)
+        self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
+        self.show_image(self.result_image)
+        self.show_labels_psnr(True)
+        self.show_labels_estilo(False)
+    
+    def on_apply_super_resolution(self):
+        shape = read_image(self.path_image)
+        width, height, channels = shape.shape
+        self.result_image = aumentar_resolucao(self.path_image)
+        self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
+        image_to_show = cv2.resize(self.result_image.copy(), (height, width))
+        self.show_image(image_to_show)
+        self.show_labels_psnr(True)
+        self.show_labels_estilo(False)  
+
+    def on_apply_deblur(self):
+        self.result_image = chamar_deblur(self.path_image)
+        self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
+        self.show_image(self.result_image)
+        self.show_labels_psnr(True)
+        self.show_labels_estilo(False)  
     
     def show_labels_estilo(self, flag):
         self.label_estilo.setVisible(flag)
@@ -227,22 +271,16 @@ class Ui_MainWindow(QMainWindow):
 
     def show_labels_psnr(self, flag):
         self.label.setVisible(flag)
-        self.label_2.setVisible(flag)
+        self.label_2.setVisible(flag)   
     
     def show_image(self, result_image):
-        print('shape da imagem', result_image.shape)
-        image = QImage(result_image, result_image.shape[1],\
-                            result_image.shape[0], result_image.shape[1] * 3, QImage.Format.Format_RGB888)
+        image = QImage(result_image.tobytes(), result_image.shape[1], 
+                       result_image.shape[0], result_image.shape[1] * 3, QImage.Format.Format_RGB888)
         self.pixmap_img_resultante = QPixmap(image)
         if not self.pixmap_img_resultante.isNull():
             self.scene_img_resultante.clear()
             self.scene_img_resultante.addPixmap(self.pixmap_img_resultante)
         self.calculate_psnr(result_image, self.label_2)
-
-    def on_botao_super_resolution(self):
-        result_image = self.on_apply_super_resolution(self.path_image)
-        self.show_image(result_image)
-        self.show_labels_psnr(True)
     
     def on_botao_original_clicked(self):
         self.load_image(self.scene_img_original, self.label)
@@ -257,20 +295,7 @@ class Ui_MainWindow(QMainWindow):
         self.view_img_resultante.horizontalScrollBar().setValue(move_factor_x)
         self.view_img_resultante.verticalScrollBar().setValue(move_factor_y)
 
-    def on_apply_denoising(self):
-        self.image = read_image(self.path_image)
-        self.result_image = denoise(self.image)
-        self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
-        self.show_image(self.result_image)
-        self.show_labels_psnr(True)
-        self.show_labels_estilo(False)
-    
-    def on_apply_super_resolution(self, image_path):
-        image = read_image(image_path)
-        return image
-    
     def calculate_psnr(self, image, label):
-        # image = cv2.imread(image_path)
         max_pixel_value = 255
         mse = np.mean((image.astype(np.float32) ** 2))
         psnr = 10 * np.log10((max_pixel_value ** 2) / mse)
@@ -279,10 +304,12 @@ class Ui_MainWindow(QMainWindow):
     def save_image(self):
         file_name, _ = QFileDialog.getSaveFileName(self, "Salvar Imagem", "", "Imagens (*.png *.jpg *.bmp);;Todos os arquivos (*)")
         if file_name:
-            if self.pixmap_img_resultante.save(file_name):
+            try:
+                image_to_save = cv2.cvtColor(self.result_image, cv2.COLOR_RGB2BGR)
+                cv2.imwrite(file_name, image_to_save)
                 QMessageBox.information(self, "Salvo com Sucesso", f'Imagem salva em: {file_name}', QMessageBox.StandardButton.Ok)
-            else:
-                QMessageBox.critical(self, "Erro ao Salvar", "Ocorreu um erro ao salvar a imagem.", QMessageBox.StandardButton.Ok)
+            except Exception as e:
+                QMessageBox.critical(self, "Erro ao Salvar", f"Ocorreu um erro ao salvar a imagem: {str(e)}", QMessageBox.StandardButton.Ok)
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
