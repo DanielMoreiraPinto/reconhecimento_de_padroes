@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-from ptflops import get_model_complexity_info
 import math
 
 dir_name = os.path.dirname(os.path.abspath(__file__))

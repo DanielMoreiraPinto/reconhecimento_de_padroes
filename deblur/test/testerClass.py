@@ -1,30 +1,19 @@
-import cv2 as cv
-import numpy as np
+import setup_path
+
 import os,sys,math
 import argparse
-from tqdm import tqdm
-from einops import rearrange, repeat
-
-import torch.nn as nn
 import torch
-from torch.utils.data import DataLoader
-import torch.nn.functional as F
-from ptflops import get_model_complexity_info
+import cv2 as cv
+# aux = os.getcwd()
+# dir_name = os.path.dirname(os.path.abspath(__file__))
+# sys.path.append(os.path.join(dir_name,'../dataset/'))
+# sys.path.append(os.path.join(dir_name,'..'))
 
-dir_name = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(dir_name,'../dataset/'))
-sys.path.append(os.path.join(dir_name,'..'))
+from deblur.dataset.dataset_motiondeblur import *
+from deblur.dataset import split, together
+import deblur.utils as utils
 
-import scipy.io as sio
-from dataset.dataset_motiondeblur import *
-from dataset import split, together
-import utils
-
-from model import UNet,Uformer
-
-from skimage import img_as_float32, img_as_ubyte
-from skimage.metrics import peak_signal_noise_ratio as psnr_loss
-from skimage.metrics import structural_similarity as ssim_loss
+from skimage import img_as_ubyte
 
 
 class TesterClass:
@@ -36,8 +25,6 @@ class TesterClass:
         img = torch.zeros(1,3,X,X).type_as(timg) # 3, h,w
         mask = torch.zeros(1,1,X,X).type_as(timg)
 
-        # print(img.size(),mask.size())
-        # print((X - h)//2, (X - h)//2+h, (X - w)//2, (X - w)//2+w)
         img[:,:, ((X - h)//2):((X - h)//2 + h),((X - w)//2):((X - w)//2 + w)] = timg
         mask[:,:, ((X - h)//2):((X - h)//2 + h),((X - w)//2):((X - w)//2 + w)].fill_(1)
 
@@ -97,10 +84,8 @@ class TesterClass:
         utils.mkdir(args.result_dir)
 
         test_dataset = get_validation_deblur_data(args.input_dir, imagePath=imagePath)
-#        test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False, num_workers=1, drop_last=False)
 
         model_restoration= utils.get_arch(args)
-        # model_restoration = torch.nn.DataParallel(model_restoration)
 
         utils.load_checkpoint(model_restoration,args.weights)
         print("===>Testing using weights: ", args.weights)
@@ -113,7 +98,6 @@ class TesterClass:
             processed = []
             for data_test_aux in images:
                 _, h, w= data_test_aux.shape
- #               data_test = list(data_test_aux)
                 image = data_test_aux.unsqueeze(0)
                 rgb_noisy, mask = self.expand2square(image.cuda(), factor=128) 
 
