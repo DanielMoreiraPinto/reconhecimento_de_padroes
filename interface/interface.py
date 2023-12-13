@@ -92,12 +92,12 @@ class Ui_MainWindow(QMainWindow):
         self.label_3.setFont(self.font_title)
 
         self.label_6 = QLabel(parent=self.centralwidget)
-        self.label_6.setGeometry(QRect(930, 370, 190, 31))
+        self.label_6.setGeometry(QRect(930, 410, 190, 31))
         self.label_6.setObjectName("label_6")
         self.label_6.hide()
 
         self.label_estilo = QLabel(parent=self.centralwidget)
-        self.label_estilo.setGeometry(QRect(930, 400, 200, 200))
+        self.label_estilo.setGeometry(QRect(930, 440, 200, 200))
         self.label_estilo.setStyleSheet("border: 1px solid white;") 
         self.label_estilo.hide()
 
