@@ -1,6 +1,11 @@
 # Visual Studio Code
 .vscode/
 
+# Repositorio
+model_zoo/*.pth
+model_zoo/*.tar
+model_zoo/*.h5
+
 # Denoiser
 denoiser/data/
 datasets/Mi3_Aligned
@@ -15,6 +20,10 @@ deblur/results/
 deblur/*/input/
 deblur/*/groundtruth/
 
+# Super Resolution
+superesolution/inputs/
+superesolution/model_zoo/
+superesolution/results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
