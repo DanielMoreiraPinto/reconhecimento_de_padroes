@@ -14,7 +14,7 @@ from denoiser.denoiser import denoise
 from styletransfer.transfer import style_transfer
 from colorization.demo_release import colorize_image
 from superesolution.supres_class import aumentar_resolucao
-from deblur.test.testerClass import chamar_deblur
+from deblur.test.testerClass import chamar_deblur, chamar_denoiser
 
 
 class WorkerThread(QThread):
@@ -120,7 +120,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton.setIcon(icon_reduzir_ruido)
         self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
         self.pushButton.setToolTip("Reduzir Ruído")
-        self.pushButton.clicked.connect(self.on_apply_deblur)
+        self.pushButton.clicked.connect(self.on_apply_denoise)
 
         icon_salvar_imagem = QIcon()
         icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
@@ -263,7 +263,14 @@ class Ui_MainWindow(QMainWindow):
         self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
         self.show_image(self.result_image)
         self.show_labels_psnr(True)
-        self.show_labels_estilo(False)  
+        self.show_labels_estilo(False)
+
+    def on_apply_denoise(self):
+        self.result_image = chamar_deblur(self.path_image)
+        self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
+        self.show_image(self.result_image)
+        self.show_labels_psnr(True)
+        self.show_labels_estilo(False)
     
     def show_labels_estilo(self, flag):
         self.label_estilo.setVisible(flag)
