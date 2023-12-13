@@ -120,7 +120,7 @@ class Ui_MainWindow(QMainWindow):
         self.pushButton.setIcon(icon_reduzir_ruido)
         self.pushButton.setIconSize(QSize(self.pushButton.sizeHint().width(), self.pushButton.sizeHint().height()))
         self.pushButton.setToolTip("Reduzir Ruído")
-        self.pushButton.clicked.connect(self.on_apply_denoising)
+        self.pushButton.clicked.connect(self.on_apply_deblur)
 
         icon_salvar_imagem = QIcon()
         icon_salvar_imagem.addPixmap(QPixmap("icons:save-result.png"), QIcon.Mode.Normal, QIcon.State.Off)
