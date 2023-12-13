@@ -266,7 +266,7 @@ class Ui_MainWindow(QMainWindow):
         self.show_labels_estilo(False)
 
     def on_apply_denoise(self):
-        self.result_image = chamar_deblur(self.path_image)
+        self.result_image = chamar_denoiser(self.path_image)
         self.result_image = cv2.cvtColor(self.result_image, cv2.COLOR_BGR2RGB)
         self.show_image(self.result_image)
         self.show_labels_psnr(True)
