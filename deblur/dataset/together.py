@@ -39,8 +39,8 @@ def unir_imagens_por_caminho(imagem1_path, imagem2_path, imagem3_path=None, imag
 
 def unir_imagens(images):
     import cv2 as cv
-    for i, img in enumerate(images):
-        cv.imwrite(str(i)+'.png', img)    
+    # for i, img in enumerate(images):
+    #     cv.imwrite(str(i)+'.png', img)    
     imagens = [Image.fromarray(pixels.astype('uint8'), 'RGB') for pixels in images]
     
     # Verifica as dimensões

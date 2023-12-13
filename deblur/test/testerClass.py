@@ -45,14 +45,18 @@ class TesterClass:
         return together.unir_imagens(images)
 
 
-    def teste_gopro_hide_r(self, imagePath=None):
+    def teste_gopro_hide_r(self, imagePath=None, model='deblur'):
         parser = argparse.ArgumentParser(description='Image motion deblurring evaluation on GoPro/HIDE')
         parser.add_argument('--input_dir', default='',
             type=str, help='Directory of validation images')
         parser.add_argument('--result_dir', default='',
             type=str, help='Directory for results')
-        parser.add_argument('--weights', default='model_zoo/Uformer_B.pth',
-            type=str, help='Path to weights')
+        if model == 'deblur':
+            parser.add_argument('--weights', default='model_zoo/Uformer_B_gopro.pth',
+                type=str, help='Path to weights')
+        else:
+            parser.add_argument('--weights', default='model_zoo/Uformer_B_sidd.pth',
+                type=str, help='Path to weights')
         parser.add_argument('--gpus', default='0', type=str, help='CUDA_VISIBLE_DEVICES')
         parser.add_argument('--arch', default='Uformer_B', type=str, help='arch')
         parser.add_argument('--batch_size', default=1, type=int, help='Batch size for dataloader')
@@ -117,7 +121,11 @@ class TesterClass:
 
 def chamar_deblur(imagePath):
     tester = TesterClass()
-    return tester.teste_gopro_hide_r(imagePath=imagePath)
+    return tester.teste_gopro_hide_r(imagePath=imagePath, model='deblur')
+
+def chamar_denoiser(imagePath):
+    tester = TesterClass()
+    return tester.teste_gopro_hide_r(imagePath=imagePath, model='denoiser')
 
 #a = chamar_deblur("C:\\Users\\Danilo\\code\\Uformer-main\\dataset\\deblurring\\test\\input\\4_XIAOMI-PROCOFONE-F1_F.jpg")
 #a = chamar_deblur("C:\\Users\\Danilo\\code\\Uformer-main\\dataset\\deblurring\\test_gopro\\input\\GOPR0384_11_00-000001.png")
