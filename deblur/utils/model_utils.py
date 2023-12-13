@@ -21,7 +21,10 @@ def save_checkpoint(model_dir, state, session):
     torch.save(state, model_out_path)
 
 def load_checkpoint(model, weights):
-    checkpoint = torch.load(weights)
+    if not torch.cuda.is_available():
+        checkpoint = torch.load(weights, map_location=torch.device('cpu'))
+    else:
+        checkpoint = torch.load(weights)
     try:
         model.load_state_dict(checkpoint["state_dict"])
     except:
@@ -54,7 +57,7 @@ def load_optim(optimizer, weights):
     return lr
 
 def get_arch(opt):
-    from model import Uformer, UNet
+    from deblur.model import Uformer, UNet
 
     arch = opt.arch
 

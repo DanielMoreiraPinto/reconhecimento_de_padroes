@@ -47,11 +47,11 @@ class TesterClass:
 
     def teste_gopro_hide_r(self, imagePath=None):
         parser = argparse.ArgumentParser(description='Image motion deblurring evaluation on GoPro/HIDE')
-        parser.add_argument('--input_dir', default='C://Users//Danilo//Downloads//Uformer-main//dataset//deblurring',
+        parser.add_argument('--input_dir', default='',
             type=str, help='Directory of validation images')
-        parser.add_argument('--result_dir', default='C://Users//Danilo//Downloads//Uformer-main//results',
+        parser.add_argument('--result_dir', default='',
             type=str, help='Directory for results')
-        parser.add_argument('--weights', default='C://Users//Danilo//Downloads//Uformer-main//weights//Uformer_B.pth',
+        parser.add_argument('--weights', default='model_zoo/Uformer_B.pth',
             type=str, help='Path to weights')
         parser.add_argument('--gpus', default='0', type=str, help='CUDA_VISIBLE_DEVICES')
         parser.add_argument('--arch', default='Uformer_B', type=str, help='arch')
@@ -81,16 +81,19 @@ class TesterClass:
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
-        utils.mkdir(args.result_dir)
-
         test_dataset = get_validation_deblur_data(args.input_dir, imagePath=imagePath)
 
         model_restoration= utils.get_arch(args)
 
         utils.load_checkpoint(model_restoration,args.weights)
         print("===>Testing using weights: ", args.weights)
+        
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
 
-        model_restoration.cuda()
+        model_restoration.to(device)
         model_restoration.eval()
 
         with torch.no_grad():
@@ -99,7 +102,7 @@ class TesterClass:
             for data_test_aux in images:
                 _, h, w= data_test_aux.shape
                 image = data_test_aux.unsqueeze(0)
-                rgb_noisy, mask = self.expand2square(image.cuda(), factor=128) 
+                rgb_noisy, mask = self.expand2square(image.to(device), factor=128) 
 
                 rgb_restored = model_restoration(rgb_noisy)
                 rgb_restored = torch.masked_select(rgb_restored,mask.bool()).reshape(1,3,h,w)
@@ -109,6 +112,7 @@ class TesterClass:
                 processed.append(img_as_ubyte(rgb_restored))
 
         imagem_final = self.join_image(processed)
+        imagem_final = imagem_final[:, :, ::-1]
         return imagem_final
 
 def chamar_deblur(imagePath):

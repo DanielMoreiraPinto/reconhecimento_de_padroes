@@ -220,14 +220,14 @@ class DataLoaderTest(Dataset):
 
 
 def get_training_data(rgb_dir, img_options):
-    assert os.path.exists(rgb_dir)
+    # assert os.path.exists(rgb_dir)
     return DataLoaderTrain(rgb_dir, img_options, None)
 
 
 def get_validation_deblur_data(rgb_dir, img_options=None, imagePath=None):
-    assert os.path.exists(rgb_dir)
+    # assert os.path.exists(rgb_dir)
     return DataLoaderVal_deblur(rgb_dir, img_options, None, imagePath)
 
 def get_test_data(rgb_dir, img_options=None, imagePath=None):
-    assert os.path.exists(rgb_dir)
+    # assert os.path.exists(rgb_dir)
     return DataLoaderTest(rgb_dir, img_options, imagePath)

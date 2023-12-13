@@ -5,6 +5,10 @@
 model_zoo/*.pth
 model_zoo/*.tar
 model_zoo/*.h5
+ex_input/*.png
+ex_input/*.jpg
+ex_output/*.png
+ex_output/*.jpg
 
 # Denoiser
 denoiser/data/
