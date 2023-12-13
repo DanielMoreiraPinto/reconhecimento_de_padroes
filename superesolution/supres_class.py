@@ -48,6 +48,7 @@ class SuperResolution:
 
         # read image
         imgname, img_lq, _ = self.get_image_pair(args, img_path)  # image to HWC-BGR, float32
+        shape = img_lq.shape
         img_lq = np.transpose(img_lq if img_lq.shape[2] == 1 else img_lq[:, :, [2, 1, 0]], (2, 0, 1))  # HCW-BGR to CHW-RGB
         img_lq = torch.from_numpy(img_lq).float().unsqueeze(0).to(device)  # CHW-RGB to NCHW-RGB
 
@@ -72,7 +73,7 @@ class SuperResolution:
             output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
         output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
         # cv2.imwrite(f'{save_dir}/{imgname}_Swin2SR.png', output)
-        return output
+        return output, shape
 
     def define_model(self, args):
         # 001 classical image sr
@@ -240,8 +241,8 @@ class SuperResolution:
 
 def aumentar_resolucao(img_path):
     sr = SuperResolution()
-    img = sr.main(img_path)
-    return img
+    img, shape = sr.main(img_path)
+    return img, shape
 
 
 # img = aumentar_resolucao('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\superesolution\\inputs\\shanghai.jpg')
