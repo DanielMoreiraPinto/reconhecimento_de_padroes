@@ -10,7 +10,7 @@ import cv2 as cv
 # sys.path.append(os.path.join(dir_name,'..'))
 
 from deblur.dataset.dataset_motiondeblur import *
-from deblur.dataset import split, together
+from deblur.dataset import together
 import deblur.utils as utils
 
 from skimage import img_as_ubyte
@@ -29,15 +29,6 @@ class TesterClass:
         mask[:,:, ((X - h)//2):((X - h)//2 + h),((X - w)//2):((X - w)//2 + w)].fill_(1)
 
         return img, mask
-    
-    def split_image(self, image):
-        max_w = 1280
-        max_h = 720
-        w, h, _ = image.shape 
-        if max_w < w or max_h < h:
-            i1, i2, i3, i4 = split.dividir_imagem(image)
-            return [i1, i2, i3, i4]
-        return [image]
     
     def join_image(self, images):
         if len(images) == 1:

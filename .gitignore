@@ -24,6 +24,16 @@ deblur/results/
 deblur/*/input/
 deblur/*/groundtruth/
 
+# Blur detect
+blurdetect/weights/
+blurdetect/blur_dataset/
+blurdetect/datasets/
+
+# Noise detect
+noisedetect/weights/
+noisedetect/blur_dataset/
+noisedetect/datasets/
+
 # Super Resolution
 superesolution/inputs/
 superesolution/model_zoo/
