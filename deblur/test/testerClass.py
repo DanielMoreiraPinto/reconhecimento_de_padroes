@@ -107,8 +107,39 @@ class TesterClass:
                 processed.append(img_as_ubyte(rgb_restored))
 
         imagem_final = self.join_image(processed)
+        imagem_final = self.refinar_linhas(imagem_final)
         imagem_final = imagem_final[:, :, ::-1]
         return imagem_final
+
+    def refinar_linhas(self, image):
+        num_horizontal_patches = 2
+        num_vertical_patches = 2
+        adjust = 0
+        patch_size = image.shape[0] // num_horizontal_patches
+        blur_radius = 3
+        kernel_size = 3
+
+        for i in range(1, num_horizontal_patches):
+            x = i * patch_size
+            line = image[:, (x - blur_radius):(x + blur_radius-adjust), :]
+            for i in range(1, blur_radius):
+                line[:, i, :] = line[:, 0, :]
+                line[:, -i, :] = line[:, -1, :]
+            # image[:, (x - blur_radius):(x + blur_radius), :] = cv.medianBlur(line, kernel_size)
+            image[:, (x - blur_radius):(x + blur_radius-adjust), :] = cv.GaussianBlur(line, (kernel_size, kernel_size), 0)
+            image[:, (x - blur_radius):(x + blur_radius-adjust), :] = line
+        
+        for i in range(1, num_vertical_patches):
+            y = i * patch_size
+            line = image[(y - blur_radius):(y + blur_radius-adjust), :, :]
+            for i in range(1, blur_radius):
+                line[i, :, :] = line[0, :, :]
+                line[-i, :, :] = line[-1, :, :]
+            # image[(y - blur_radius):(y + blur_radius), :, :] = cv.medianBlur(line, kernel_size)
+            image[(y - blur_radius):(y + blur_radius-adjust), :, :] = cv.GaussianBlur(line, (kernel_size, kernel_size), 0)
+            image[(y - blur_radius):(y + blur_radius-adjust), :, :] = line
+
+        return image
 
 def chamar_deblur(imagePath):
     tester = TesterClass()
