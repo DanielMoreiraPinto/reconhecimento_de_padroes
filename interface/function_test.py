@@ -18,6 +18,9 @@ from deblur.test.testerClass import chamar_deblur, chamar_denoiser
 
 from blurdetect.detect_blur import BlurDetector
 
-img = cv2.imread('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\ex_input\\GOPR0384_11_00-000001.png')
+# img = cv2.imread('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\ex_input\\3_HUAWEI-NOVA-LITE_M.jpg')
+img = cv2.imread('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\ex_input\\3_HUAWEI-NOVA-LITE_F.jpg')
 detector = BlurDetector()
 print(detector.detect_blur(img))
+img = chamar_deblur('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\ex_input\\8_SAMSUNG-GALAXY-A6_F.jpg')
+cv2.imwrite('D:\\daniel_moreira\\reconhecimento_de_padroes\\reconhecimento_de_padroes\\ex_output\\8_SAMSUNG-GALAXY-A6_F.jpg', img)
