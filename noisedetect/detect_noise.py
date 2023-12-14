@@ -7,7 +7,7 @@ import numpy as np
 import cv2 as cv
 import math
 
-class BlurDetector:
+class NoiseDetector:
     def preprocess_data(self, X):
         X = X/255
         return X
@@ -61,7 +61,7 @@ class BlurDetector:
         # Preprocess the image
         to_detect = self.split_image(image, 256)
         to_detect = self.preprocess_data(to_detect)
-        # Detect if image has blur
+        # Detect if image has noise
         result = model.predict(to_detect)
         result = np.sum(np.round(result))/len(result)
         return result
