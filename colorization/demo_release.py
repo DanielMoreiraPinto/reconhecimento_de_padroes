@@ -59,6 +59,7 @@ def colorize_image(path):
 	plt.show()
 	'''
 
+	print("Imagem colorida")
 	return tensor_to_image(out_img_eccv16)
 
 

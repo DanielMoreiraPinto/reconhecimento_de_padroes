@@ -241,6 +241,7 @@ class SuperResolution:
 def aumentar_resolucao(img_path):
     sr = SuperResolution()
     img = sr.main(img_path)
+    print("Imagem aumentada")
     return img
 
 

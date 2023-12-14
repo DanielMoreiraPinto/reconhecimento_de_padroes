@@ -143,11 +143,15 @@ class TesterClass:
 
 def chamar_deblur(imagePath):
     tester = TesterClass()
-    return tester.teste_gopro_hide_r(imagePath=imagePath, model='deblur')
+    img = tester.teste_gopro_hide_r(imagePath=imagePath, model='deblur')
+    print("Imagem desborrada")
+    return img
 
 def chamar_denoiser(imagePath):
     tester = TesterClass()
-    return tester.teste_gopro_hide_r(imagePath=imagePath, model='denoiser')
+    img = tester.teste_gopro_hide_r(imagePath=imagePath, model='denoiser')
+    print("Imagem sem ruído")
+    return img
 
 #a = chamar_deblur("C:\\Users\\Danilo\\code\\Uformer-main\\dataset\\deblurring\\test\\input\\4_XIAOMI-PROCOFONE-F1_F.jpg")
 #a = chamar_deblur("C:\\Users\\Danilo\\code\\Uformer-main\\dataset\\deblurring\\test_gopro\\input\\GOPR0384_11_00-000001.png")

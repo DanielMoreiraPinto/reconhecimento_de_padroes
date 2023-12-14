@@ -56,4 +56,5 @@ def style_transfer(content_image, style_image):
     hub_model = hub.load('https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2')
     stylized_image = hub_model(tf.constant(decoded_content), tf.constant(decoded_style))[0]
     result = tensor_to_image(stylized_image)
+    print("Estilo transferido")
     return result
